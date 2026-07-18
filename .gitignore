@@ -1,6 +1,8 @@
-# Build output
+# Build output. dist keeps a committed placeholder so the Go embed
+# compiles on a fresh clone; wails build fills in the real files.
 /build/bin/
-/frontend/dist/
+/frontend/dist/*
+!/frontend/dist/.gitkeep
 
 # Dependencies
 /frontend/node_modules/
