@@ -9,7 +9,7 @@
   import Header from "./lib/components/Header.svelte";
   import MaintenanceCard from "./lib/components/MaintenanceCard.svelte";
   import Modal from "./lib/components/Modal.svelte";
-  import ProfileBar from "./lib/components/ProfileBar.svelte";
+  import PresetBar from "./lib/components/PresetBar.svelte";
   import type { FixResult, Report } from "./lib/types";
 
   let report = $state<Report | null>(null);
@@ -25,6 +25,10 @@
     report ? computeChanges(report.fixes, selection) : { enable: [], disable: [] },
   );
   const changeCount = $derived(changes.enable.length + changes.disable.length);
+  const pendingIds = $derived(new Set([...changes.enable, ...changes.disable]));
+  const inPlaceCount = $derived(
+    report?.fixes.filter((f) => f.status === "on" || f.status === "removed").length ?? 0,
+  );
 
   function byCategory(cat: string) {
     return report?.fixes.filter((f) => f.category === cat) ?? [];
@@ -135,11 +139,33 @@
 {:else}
   <div class="page">
     <main>
-      <Header elevated={report.elevated} />
+      <Header elevated={report.elevated} inPlace={inPlaceCount} total={report.fixes.length} />
 
       <AlertsBanner alerts={report.alerts} onremove={removeAlertPackage} ondismiss={dismissAlerts} />
 
-      <ProfileBar fixes={report.fixes} {selection} onpick={pickProfile} />
+      {#if doneMessage}
+        <div class="done" class:warn={failures.length > 0}>
+          <p>{doneMessage}</p>
+          {#each failures as f (f.id)}
+            <p class="fail">{S.fixes[f.id as keyof typeof S.fixes]?.title ?? f.id}: {f.error}</p>
+          {/each}
+          {#if failures.length === 0 && !report.maintenance}
+            <p class="tip">{S.apply.doneMaintenanceTip}</p>
+          {/if}
+        </div>
+      {/if}
+
+      <PresetBar fixes={report.fixes} {selection} onpick={pickProfile} />
+
+      {#each report.categories as cat (cat)}
+        <CategorySection
+          id={cat}
+          fixes={byCategory(cat)}
+          {selection}
+          pending={pendingIds}
+          ontoggle={toggleFix}
+        />
+      {/each}
 
       <MaintenanceCard
         maintenance={report.maintenance}
@@ -148,19 +174,6 @@
         onmaintenance={setMaintenance}
         onwatcher={setWatcher}
       />
-
-      {#if doneMessage}
-        <div class="done" class:warn={failures.length > 0}>
-          <p>{doneMessage}</p>
-          {#each failures as f (f.id)}
-            <p class="fail">{S.fixes[f.id as keyof typeof S.fixes]?.title ?? f.id}: {f.error}</p>
-          {/each}
-        </div>
-      {/if}
-
-      {#each report.categories as cat (cat)}
-        <CategorySection id={cat} fixes={byCategory(cat)} {selection} ontoggle={toggleFix} />
-      {/each}
 
       <footer>
         <button type="button" class="link" onclick={() => api.openLogFolder()}>
@@ -250,6 +263,10 @@
     font-size: 12px;
     color: var(--text-dim);
   }
+  .tip {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
   footer {
     display: flex;
     align-items: center;
@@ -270,12 +287,18 @@
   .primary {
     padding: 8px 18px;
     border-radius: var(--r-control);
-    background: var(--coral);
+    background: linear-gradient(180deg, var(--coral-bright), var(--coral));
     color: #241511;
     font-weight: 600;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.25),
+      0 1px 3px rgba(0, 0, 0, 0.35);
   }
   .primary:hover {
-    background: var(--coral-bright);
+    background: linear-gradient(180deg, #ff8f70, var(--coral-bright));
+  }
+  .primary:active {
+    transform: translateY(1px);
   }
   .ghost {
     padding: 8px 14px;

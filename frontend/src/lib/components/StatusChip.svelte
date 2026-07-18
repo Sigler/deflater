@@ -6,22 +6,21 @@
 
   const isApp = $derived(kind === "app-junk" || kind === "app-might");
 
-  const label = $derived.by(() => {
-    if (status === "removed") return S.status.notInstalled;
-    if (status === "installed") return S.status.installed;
-    return S.status[status] ?? S.status.unknown;
-  });
-
-  // For switches, "on" is the good state. For apps, gone is the goal but
-  // "installed" is simply neutral fact, not an error.
-  const tone = $derived.by(() => {
-    if (status === "on" || status === "removed") return "good";
-    if (status === "partial") return "mixed";
-    return "neutral";
+  // Chips speak only when there is something worth saying: the fix is
+  // already in place, partly in place, or the app is already gone.
+  // Untouched rows stay quiet.
+  const chip = $derived.by((): { label: string; tone: string } | null => {
+    if (status === "on") return { label: S.status.fixed, tone: "good" };
+    if (status === "partial") return { label: S.status.partly, tone: "mixed" };
+    if (status === "removed" && isApp) return { label: S.status.notInstalled, tone: "good" };
+    if (status === "unknown") return { label: S.status.unknown, tone: "neutral" };
+    return null;
   });
 </script>
 
-<span class="chip {tone}" class:app={isApp}>{label}</span>
+{#if chip}
+  <span class="chip {chip.tone}">{chip.label}</span>
+{/if}
 
 <style>
   .chip {
@@ -32,7 +31,6 @@
     border-radius: var(--r-chip);
     background: var(--bg-raised);
     color: var(--text-dim);
-    border: 1px solid transparent;
     white-space: nowrap;
   }
   .chip.good {

@@ -2,7 +2,11 @@
   import { S } from "../i18n";
   import LogoMark from "./LogoMark.svelte";
 
-  let { elevated }: { elevated: boolean } = $props();
+  let {
+    elevated,
+    inPlace,
+    total,
+  }: { elevated: boolean; inPlace: number; total: number } = $props();
 </script>
 
 <header>
@@ -11,6 +15,7 @@
     <div class="words">
       <h1>{S.app.name}</h1>
       <p class="tagline">{S.app.tagline}</p>
+      <p class="readout">{S.app.readout(inPlace, total)}</p>
     </div>
   </div>
   <div class="side">
@@ -62,6 +67,11 @@
   .tagline {
     color: var(--text-dim);
     font-size: 13px;
+  }
+  .readout {
+    color: var(--text-faint);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
   }
   .mode {
     font-size: 11.5px;

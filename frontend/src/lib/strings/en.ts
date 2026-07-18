@@ -21,14 +21,16 @@ export const en = {
     elevated: "Administrator",
     notElevated: "Standard user",
     notElevatedHint: "Windows will ask for permission when you apply changes.",
+    readout: (n: number, total: number) =>
+      `Deflater reads this PC's real settings. ${n} of ${total} fixes are already in place.`,
     loading: "Reading your system…",
     loadingHint: "Checking every switch and installed app. This takes a few seconds.",
   },
 
   profiles: {
-    heading: "Start with a profile",
-    subheading: "Pick a starting point, then adjust anything below before applying.",
+    label: "Preset",
     custom: "Custom selection",
+    selected: (n: number, total: number) => `${n} of ${total} selected`,
     "light-touch": {
       title: "Light Touch",
       tagline: "Ads, nags, and tracking off. Nothing removed, nothing you would notice missing.",
@@ -73,20 +75,15 @@ export const en = {
   },
 
   status: {
-    on: "Active",
-    off: "Off",
-    partial: "Partly active",
-    removed: "Removed",
-    installed: "Installed",
+    fixed: "Fixed",
+    partly: "Partly fixed",
     notInstalled: "Not installed",
     unknown: "Unknown",
   },
 
   badges: {
     caution: "Worth a look",
-    reinstallable: "Reinstalls from Store",
-    reversible: "One-click undo",
-    restart: "Needs sign-out",
+    willChange: "Changes when you apply",
   },
 
   details: {
@@ -108,6 +105,8 @@ export const en = {
     doneTitle: "Done",
     doneBody:
       "All changes applied. A few finish after you sign out and back in, so do that when convenient.",
+    doneMaintenanceTip:
+      "Tip: turn on 'Keep it fixed automatically' near the bottom, so a Windows update cannot quietly undo this.",
     doneSomeFailed: (n: number) =>
       n === 1
         ? "1 change did not apply. Details below."

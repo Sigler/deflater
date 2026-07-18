@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { slide } from "svelte/transition";
   import { S } from "../i18n";
   import type { FixState } from "../types";
   import StatusChip from "./StatusChip.svelte";
@@ -7,10 +8,12 @@
   let {
     fix,
     selected,
+    pending,
     ontoggle,
   }: {
     fix: FixState;
     selected: boolean;
+    pending: boolean;
     ontoggle: (id: string, value: boolean) => void;
   } = $props();
 
@@ -39,6 +42,23 @@
     >
       <span class="titleline">
         <span class="title">{text?.title ?? fix.id}</span>
+        <svg
+          class="chevron"
+          class:open={expanded}
+          width="10"
+          height="10"
+          viewBox="0 0 10 10"
+          aria-hidden="true"
+        >
+          <path
+            d="M2 3.5 L5 6.5 L8 3.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
         {#if fix.caution}
           <span class="caution">{S.badges.caution}</span>
         {/if}
@@ -46,6 +66,9 @@
       <span class="summary">{text?.summary ?? ""}</span>
     </button>
     <StatusChip status={fix.status} kind={fix.kind} />
+    {#if pending}
+      <span class="pending" title={S.badges.willChange} aria-label={S.badges.willChange}></span>
+    {/if}
     <Toggle
       checked={selected}
       disabled={locked}
@@ -55,7 +78,7 @@
   </div>
 
   {#if expanded && text}
-    <div class="details">
+    <div class="details" transition:slide={{ duration: 180 }}>
       <div class="block">
         <span class="label">{S.details.what}</span>
         <p>{text.what}</p>
@@ -77,13 +100,19 @@
 
 <style>
   .row {
-    background: var(--bg-card);
+    background:
+      linear-gradient(180deg, rgba(255, 244, 230, 0.025), transparent 45%),
+      var(--bg-card);
     border: 1px solid var(--stroke);
     border-radius: var(--r-card);
-    transition: border-color 0.12s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
+    transition:
+      border-color 0.12s ease,
+      box-shadow 0.12s ease;
   }
   .row:hover {
     border-color: var(--stroke-strong);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
   }
   .main {
     display: flex;
@@ -108,6 +137,20 @@
     font-weight: 600;
     font-size: 14px;
   }
+  .chevron {
+    flex: none;
+    color: var(--text-faint);
+    transition:
+      transform 0.15s ease,
+      color 0.12s ease;
+  }
+  .row:hover .chevron {
+    color: var(--text-dim);
+  }
+  .chevron.open {
+    transform: rotate(180deg);
+    color: var(--coral);
+  }
   .caution {
     font-size: 11px;
     line-height: 1;
@@ -119,6 +162,14 @@
   .summary {
     color: var(--text-dim);
     font-size: 12.5px;
+  }
+  .pending {
+    flex: none;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--coral);
+    box-shadow: 0 0 6px rgba(229, 106, 77, 0.55);
   }
   .details {
     border-top: 1px solid var(--stroke);

@@ -66,12 +66,25 @@
   .primary {
     padding: 8px 22px;
     border-radius: var(--r-control);
-    background: var(--coral);
+    background: linear-gradient(180deg, var(--coral-bright), var(--coral));
     color: #241511;
     font-weight: 600;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.25),
+      0 1px 3px rgba(0, 0, 0, 0.35);
+    transition:
+      background 0.12s ease,
+      box-shadow 0.12s ease,
+      transform 0.06s ease;
   }
   .primary:hover:not(:disabled) {
-    background: var(--coral-bright);
+    background: linear-gradient(180deg, #ff8f70, var(--coral-bright));
+  }
+  .primary:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.15),
+      0 1px 1px rgba(0, 0, 0, 0.3);
   }
   .primary:disabled {
     opacity: 0.6;
