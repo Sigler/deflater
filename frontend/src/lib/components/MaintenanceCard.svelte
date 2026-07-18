@@ -45,7 +45,7 @@
 <style>
   .card {
     background:
-      linear-gradient(180deg, rgba(255, 244, 230, 0.02), transparent 45%),
+      linear-gradient(180deg, rgba(214, 228, 255, 0.025), transparent 45%),
       var(--bg-panel);
     border: 1px solid var(--stroke);
     border-radius: var(--r-card);

@@ -1,20 +1,21 @@
-/* Deflater design tokens. Dark workshop: warm charcoal, coral for action,
-   gold for attention. Windows-adjacent geometry and type so it feels at
-   home next to the OS without imitating it. */
+/* Deflater design tokens. Dark workshop in navy: cool deep-blue
+   surfaces, coral for action, gold for attention. Windows-adjacent
+   geometry and type so it feels at home next to the OS without
+   imitating it. */
 
 :root {
-  /* Surfaces, warmest at the bottom of the stack */
-  --bg-window: #191614;
-  --bg-panel: #201d1a;
-  --bg-card: #272320;
-  --bg-raised: #2f2a26;
-  --stroke: rgba(255, 244, 230, 0.08);
-  --stroke-strong: rgba(255, 244, 230, 0.16);
+  /* Surfaces, deepest at the bottom of the stack */
+  --bg-window: #10151f;
+  --bg-panel: #151b28;
+  --bg-card: #1b2230;
+  --bg-raised: #222b3c;
+  --stroke: rgba(214, 228, 255, 0.08);
+  --stroke-strong: rgba(214, 228, 255, 0.16);
 
   /* Ink */
-  --text: #ece5dd;
-  --text-dim: #a89e93;
-  --text-faint: #7d746b;
+  --text: #e4e9f2;
+  --text-dim: #97a1b5;
+  --text-faint: #6e7889;
 
   /* Brand */
   --coral: #e56a4d;
@@ -22,8 +23,8 @@
   --coral-soft: rgba(229, 106, 77, 0.16);
   --gold: #d6a44c;
   --gold-soft: rgba(214, 164, 76, 0.14);
-  --sage: #9db878;
-  --sage-soft: rgba(157, 184, 120, 0.14);
+  --sage: #84bfa4;
+  --sage-soft: rgba(132, 191, 164, 0.14);
 
   /* Shape */
   --r-card: 8px;
@@ -57,17 +58,17 @@ body {
   background: var(--coral-soft);
 }
 
-/* Scrollbars, quiet and warm */
+/* Scrollbars, quiet and cool */
 ::-webkit-scrollbar {
   width: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 244, 230, 0.12);
+  background: rgba(214, 228, 255, 0.12);
   border-radius: 5px;
   border: 2px solid var(--bg-window);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 244, 230, 0.2);
+  background: rgba(214, 228, 255, 0.2);
 }
 ::-webkit-scrollbar-track {
   background: transparent;

@@ -40,12 +40,12 @@
     height: 26px;
     border-radius: 999px;
     border: none;
-    background: linear-gradient(150deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.16));
+    background: linear-gradient(150deg, rgba(0, 0, 0, 0.42), rgba(0, 0, 0, 0.18));
     box-shadow:
       inset 0 0 0 1px rgba(0, 0, 0, 0.55),
-      inset 2px 3px 5px rgba(0, 0, 0, 0.45),
-      inset -1px -2px 3px rgba(255, 244, 230, 0.05),
-      1px 2px 3px rgba(255, 244, 230, 0.05);
+      inset 2px 3px 5px rgba(0, 0, 0, 0.48),
+      inset -1px -2px 3px rgba(214, 228, 255, 0.05),
+      1px 2px 3px rgba(214, 228, 255, 0.05);
     position: relative;
     transition: background 0.18s ease;
   }
@@ -55,7 +55,7 @@
       inset 0 0 0 1px rgba(0, 0, 0, 0.38),
       inset 2px 3px 5px rgba(0, 0, 0, 0.42),
       inset -1px -2px 3px rgba(255, 200, 170, 0.1),
-      1px 2px 3px rgba(255, 244, 230, 0.05);
+      1px 2px 3px rgba(214, 228, 255, 0.05);
   }
   .toggle.on:hover:not(:disabled) {
     background: linear-gradient(150deg, #964130, #cd5f40 55%, #d96a49);
@@ -71,7 +71,7 @@
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: radial-gradient(circle at 32% 28%, #f7f0e7, #ddd1c3 55%, #bfb2a4);
+    background: radial-gradient(circle at 32% 28%, #f3f6fa, #d3dae4 55%, #aeb8c6);
     box-shadow:
       inset 1px 1px 1px rgba(255, 255, 255, 0.55),
       inset -2px -3px 4px rgba(0, 0, 0, 0.16),
@@ -82,7 +82,7 @@
       background 0.15s ease;
   }
   .toggle:hover:not(:disabled) .knob {
-    background: radial-gradient(circle at 32% 28%, #fcf6ee, #e5dacd 55%, #c8bcae);
+    background: radial-gradient(circle at 32% 28%, #f9fbfe, #dde4ed 55%, #b9c3d1);
   }
   .toggle.on .knob {
     transform: translateX(22px);

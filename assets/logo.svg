@@ -11,7 +11,7 @@
            C59.2 91.4 56.2 88.2 55.2 82.5
            C54.4 77.6 54 68 54 55 Z"
         fill="#E56A4D" opacity="0.62"/>
-  <path d="M60 60 C61 70 62 78 65 84" stroke="#191614" stroke-opacity="0.35" stroke-width="3" stroke-linecap="round"/>
+  <path d="M60 60 C61 70 62 78 65 84" stroke="#10151F" stroke-opacity="0.35" stroke-width="3" stroke-linecap="round"/>
   <path d="M87 68 q5 -2.5 6.5 -7.5" stroke="#D6A44C" stroke-width="3.5" stroke-linecap="round"/>
   <path d="M90 77 q6 -3 8 -9" stroke="#D6A44C" stroke-width="3.5" stroke-linecap="round" opacity="0.55"/>
 </svg>

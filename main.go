@@ -34,8 +34,8 @@ func main() {
 		Height:    780,
 		MinWidth:  920,
 		MinHeight: 620,
-		// Warm near-black behind the webview so resizes never flash white.
-		BackgroundColour: &options.RGBA{R: 24, G: 22, B: 21, A: 255},
+		// Deep navy behind the webview so resizes never flash white.
+		BackgroundColour: &options.RGBA{R: 16, G: 21, B: 31, A: 255},
 		AssetServer:      &assetserver.Options{Assets: assets},
 		OnStartup:        app.startup,
 		OnBeforeClose:    app.beforeClose,

@@ -24,7 +24,7 @@
   .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(12, 10, 9, 0.6);
+    background: rgba(7, 10, 16, 0.62);
     display: grid;
     place-items: center;
     z-index: 50;

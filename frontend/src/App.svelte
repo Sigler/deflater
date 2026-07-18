@@ -245,7 +245,7 @@
   }
   .done {
     background: var(--sage-soft);
-    border: 1px solid rgba(157, 184, 120, 0.35);
+    border: 1px solid rgba(132, 191, 164, 0.35);
     border-radius: var(--r-card);
     padding: 12px 16px;
     font-size: 13px;
