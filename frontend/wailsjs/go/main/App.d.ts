@@ -14,6 +14,8 @@ export function RemovePackage(arg1:string):Promise<void>;
 
 export function SaveAndElevate(arg1:Array<string>,arg2:Array<string>):Promise<void>;
 
+export function SetDirty(arg1:number):Promise<void>;
+
 export function SetMaintenance(arg1:boolean):Promise<boolean>;
 
 export function SetWatcher(arg1:boolean):Promise<void>;

@@ -26,75 +26,75 @@
 </button>
 
 <style>
-  /* The track is a recessed well, lit from above: the rim is drawn with
-     an inset ring (no real border, which would skew the geometry and
-     catch false light), the top inner lip is in shadow, and the only
-     light is a faint reflection on the well floor and a hairline on the
-     bottom outer lip. The state color sits down inside the well and
-     stays matte; nothing on top of the shape shines. */
+  /* Soft-UI toggle, one light source at the upper left.
+     The track is a well sunk into the card: its upper-left inner lip is
+     in shadow, its lower-right inner edge catches faint reflected light,
+     and a soft rim highlight sits on the outer lower edge where the
+     surface rolls back up. The state color lies matte at the bottom of
+     the well. The knob is a soft dome resting proud of the well: bright
+     toward the light at the upper left, curving into shade at the lower
+     right, dropping a diffuse shadow onto the well floor. */
   .toggle {
     flex: none;
-    width: 44px;
-    height: 22px;
+    width: 48px;
+    height: 26px;
     border-radius: 999px;
     border: none;
-    background: linear-gradient(180deg, rgba(0, 0, 0, 0.38), rgba(0, 0, 0, 0.18));
+    background: linear-gradient(150deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.16));
     box-shadow:
-      inset 0 0 0 1px rgba(0, 0, 0, 0.4),
-      inset 0 2px 3px rgba(0, 0, 0, 0.5),
-      inset 0 -1px 1px rgba(255, 244, 230, 0.05),
-      0 1px 0 rgba(255, 244, 230, 0.06);
+      inset 0 0 0 1px rgba(0, 0, 0, 0.55),
+      inset 2px 3px 5px rgba(0, 0, 0, 0.45),
+      inset -1px -2px 3px rgba(255, 244, 230, 0.05),
+      1px 2px 3px rgba(255, 244, 230, 0.05);
     position: relative;
-    transition: background 0.15s ease;
+    transition: background 0.18s ease;
   }
   .toggle.on {
-    background: linear-gradient(180deg, #8f3a2a, #cd5a3d 60%, #dd664a);
+    background: linear-gradient(150deg, #8a3626, #c05539 55%, #cd5f40);
     box-shadow:
-      inset 0 0 0 1px rgba(0, 0, 0, 0.42),
-      inset 0 2px 3px rgba(0, 0, 0, 0.45),
-      inset 0 -1px 1px rgba(255, 200, 170, 0.12),
-      0 1px 0 rgba(255, 244, 230, 0.06);
+      inset 0 0 0 1px rgba(0, 0, 0, 0.38),
+      inset 2px 3px 5px rgba(0, 0, 0, 0.42),
+      inset -1px -2px 3px rgba(255, 200, 170, 0.1),
+      1px 2px 3px rgba(255, 244, 230, 0.05);
   }
   .toggle.on:hover:not(:disabled) {
-    background: linear-gradient(180deg, #9a4030, #d9603f 60%, #e77049);
+    background: linear-gradient(150deg, #964130, #cd5f40 55%, #d96a49);
   }
   .toggle:disabled {
     opacity: 0.45;
     cursor: default;
   }
-  /* The knob is a raised button sitting proud of the well: lit from
-     above, casting a soft shadow down into it. Hover brightens the
-     button itself rather than ringing the well. */
   .knob {
     position: absolute;
     top: 3px;
     left: 3px;
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
-    background: linear-gradient(180deg, #f2eae0, #cfc3b6);
+    background: radial-gradient(circle at 32% 28%, #f7f0e7, #ddd1c3 55%, #bfb2a4);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.55),
-      inset 0 -1px 1px rgba(0, 0, 0, 0.12),
-      0 1px 1px rgba(0, 0, 0, 0.4),
-      0 2px 3px rgba(0, 0, 0, 0.3);
+      inset 1px 1px 1px rgba(255, 255, 255, 0.55),
+      inset -2px -3px 4px rgba(0, 0, 0, 0.16),
+      2px 3px 5px rgba(0, 0, 0, 0.4),
+      1px 1px 2px rgba(0, 0, 0, 0.35);
     transition:
-      transform 0.15s ease,
+      transform 0.18s cubic-bezier(0.3, 0.9, 0.4, 1.1),
       background 0.15s ease;
   }
   .toggle:hover:not(:disabled) .knob {
-    background: linear-gradient(180deg, #f9f3ea, #ddd1c4);
+    background: radial-gradient(circle at 32% 28%, #fcf6ee, #e5dacd 55%, #c8bcae);
   }
   .toggle.on .knob {
     transform: translateX(22px);
   }
   .toggle:active:not(:disabled) .knob {
-    transform: translateY(0.5px) scale(0.96);
+    transform: translateY(0.5px) scale(0.95);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.4),
-      0 1px 1px rgba(0, 0, 0, 0.35);
+      inset 1px 1px 1px rgba(255, 255, 255, 0.4),
+      inset -2px -3px 4px rgba(0, 0, 0, 0.18),
+      1px 2px 3px rgba(0, 0, 0, 0.35);
   }
   .toggle.on:active:not(:disabled) .knob {
-    transform: translateX(22px) translateY(0.5px) scale(0.96);
+    transform: translateX(22px) translateY(0.5px) scale(0.95);
   }
 </style>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { fly } from "svelte/transition";
   import { S } from "../i18n";
 
   let {
@@ -17,7 +18,7 @@
 </script>
 
 {#if changeCount > 0 || applying}
-  <div class="bar">
+  <div class="bar" transition:fly={{ y: 28, duration: 220 }}>
     <span class="count">
       {applying ? progressText || S.apply.applying : S.apply.changesReady(changeCount)}
     </span>
@@ -26,7 +27,7 @@
         {S.apply.reset}
       </button>
       <button type="button" class="primary" disabled={applying} onclick={onapply}>
-        {applying ? S.apply.applying : S.apply.apply}
+        {applying ? S.apply.applying : S.apply.applyCount(changeCount)}
       </button>
     </div>
   </div>

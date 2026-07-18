@@ -8,6 +8,7 @@ import {
   OpenLogFolder,
   RemovePackage,
   SaveAndElevate,
+  SetDirty,
   SetMaintenance,
   SetWatcher,
 } from "../../wailsjs/go/main/App";
@@ -20,6 +21,7 @@ export const api = {
   saveAndElevate: (enable: string[], disable: string[]) => SaveAndElevate(enable, disable),
   setMaintenance: (on: boolean) => SetMaintenance(on) as Promise<boolean>,
   setWatcher: (on: boolean) => SetWatcher(on),
+  setDirty: (n: number) => SetDirty(n),
   dismissAlerts: () => DismissAlerts(),
   removePackage: (name: string) => RemovePackage(name),
   openLogFolder: () => OpenLogFolder(),

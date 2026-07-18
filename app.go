@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync/atomic"
 	"syscall"
 
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
@@ -25,6 +26,9 @@ import (
 type App struct {
 	ctx context.Context
 	eng *engine.Engine
+	// dirty mirrors the frontend's count of staged-but-unapplied changes
+	// so closing the window can warn before losing them.
+	dirty atomic.Int32
 }
 
 func NewApp() *App {
@@ -237,6 +241,37 @@ func (a *App) syncMaintenanceTask(cfg *config.Config) {
 	if err := schtask.Uninstall(); err != nil {
 		logging.Logf("maintenance: disable failed: %v", err)
 	}
+}
+
+// SetDirty records how many staged changes are awaiting apply.
+func (a *App) SetDirty(n int) {
+	a.dirty.Store(int32(n))
+}
+
+// beforeClose warns when the window is closing with staged changes.
+// Returning true prevents the close.
+func (a *App) beforeClose(ctx context.Context) bool {
+	n := int(a.dirty.Load())
+	if n <= 0 {
+		return false
+	}
+	// This copy lives in Go because the dialog is native and can outlive
+	// the webview; keep it in sync with the frontend string catalog.
+	msg := fmt.Sprintf("You have %d pending changes that were never applied. Close without applying them?", n)
+	if n == 1 {
+		msg = "You have 1 pending change that was never applied. Close without applying it?"
+	}
+	choice, err := wruntime.MessageDialog(ctx, wruntime.MessageDialogOptions{
+		Type:          wruntime.QuestionDialog,
+		Title:         "Deflater",
+		Message:       msg,
+		Buttons:       []string{"Yes", "No"},
+		DefaultButton: "No",
+	})
+	if err != nil {
+		return false
+	}
+	return choice != "Yes"
 }
 
 // SetWatcher toggles silent-install alerts (used by maintenance runs).

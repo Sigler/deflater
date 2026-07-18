@@ -38,6 +38,7 @@ func main() {
 		BackgroundColour: &options.RGBA{R: 24, G: 22, B: 21, A: 255},
 		AssetServer:      &assetserver.Options{Assets: assets},
 		OnStartup:        app.startup,
+		OnBeforeClose:    app.beforeClose,
 		Bind:             []any{app},
 		Windows: &windows.Options{
 			Theme: windows.Dark,

@@ -26,6 +26,10 @@ export function SaveAndElevate(arg1, arg2) {
   return window['go']['main']['App']['SaveAndElevate'](arg1, arg2);
 }
 
+export function SetDirty(arg1) {
+  return window['go']['main']['App']['SetDirty'](arg1);
+}
+
 export function SetMaintenance(arg1) {
   return window['go']['main']['App']['SetMaintenance'](arg1);
 }

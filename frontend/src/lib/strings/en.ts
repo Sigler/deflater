@@ -1,4 +1,4 @@
-// Every user-facing word in Deflater lives here, keyed by the ids the
+﻿// Every user-facing word in Deflater lives here, keyed by the ids the
 // Go catalog exposes. Adding a language means translating this file and
 // switching the export in ../i18n.ts. Style notes: plain sentences,
 // honest about tradeoffs, no jargon, no drama.
@@ -22,7 +22,7 @@ export const en = {
     notElevated: "Standard user",
     notElevatedHint: "Windows will ask for permission when you apply changes.",
     readout: (n: number, total: number) =>
-      `Deflater reads this PC's real settings. ${n} of ${total} fixes are already in place.`,
+      `Deflater reads this PC's real settings. ${n} of ${total} fixes are already in place. Nothing changes until you press Apply.`,
     loading: "Reading your system…",
     loadingHint: "Checking every switch and installed app. This takes a few seconds.",
   },
@@ -85,7 +85,7 @@ export const en = {
     partlyBlocked: "Partly blocked",
     willTurnOn: "Will turn on",
     willTurnOff: "Will turn off",
-    willRemove: "Will remove",
+    willRemove: "Will uninstall",
     willBlock: "Will block",
     willUnblock: "Will unblock",
     unknown: "Unknown",
@@ -102,13 +102,17 @@ export const en = {
     undo: "Undoing it",
     mechanismReg: (n: number) =>
       n === 1 ? "Sets 1 Windows setting." : `Sets ${n} Windows settings.`,
-    mechanismApp: (names: string) => `Removes: ${names}.`,
+    mechanismApp: (names: string) => `Uninstalls: ${names}.`,
     undoSwitch: "Flip the toggle off and apply. Deflater restores the Windows default.",
     undoApp: "Reinstall it from the Microsoft Store any time, free.",
   },
 
   apply: {
-    changesReady: (n: number) => (n === 1 ? "1 change ready" : `${n} changes ready`),
+    changesReady: (n: number) =>
+      n === 1
+        ? "1 change pending. Nothing is applied yet."
+        : `${n} changes pending. Nothing is applied yet.`,
+    applyCount: (n: number) => (n === 1 ? "Apply 1 change" : `Apply ${n} changes`),
     apply: "Apply changes",
     applying: "Applying…",
     reset: "Reset",
@@ -181,7 +185,7 @@ export const en = {
       undo: "Flip the toggle off and apply.",
     },
     "settings-suggestions": {
-      title: "Clear Start and Settings suggestions",
+      title: "Turn off Start and Settings suggestions",
       summary: "Clears promoted apps and 'tips' from Start and the Settings app.",
       what: "Turns off nine suggestion switches: promoted content in Settings, app suggestions in Start, 'recommendations for tips and new apps', and the welcome experience after updates.",
       tradeoff:
@@ -220,26 +224,26 @@ export const en = {
       undo: "Flip the toggle off and apply.",
     },
     "app-officehub": {
-      title: "Remove Microsoft 365 promo hub",
+      title: "Uninstall Microsoft 365 promo hub",
       summary: "Removes the Microsoft 365 app that mostly sells subscriptions.",
       what: "Uninstalls the Microsoft 365 hub app. This is the promo shell, not Office itself: Word, Excel, and your documents are untouched whether or not you have Office installed.",
       undo: "Reinstall 'Microsoft 365' from the Microsoft Store any time.",
     },
     "app-news": {
-      title: "Remove News app",
+      title: "Uninstall News app",
       summary: "Removes Microsoft's Bing-powered news app.",
       what: "Uninstalls Microsoft News for every account on this PC and stops Windows re-adding it for new accounts.",
       undo: "Reinstall 'Microsoft News' from the Microsoft Store any time.",
     },
     "app-weather": {
-      title: "Remove Weather app",
+      title: "Uninstall Weather app",
       summary: "Removes the MSN Weather app.",
       what: "Uninstalls MSN Weather. The taskbar weather button is separate; that belongs to Widgets, covered below.",
       tradeoff: "If you actually open the Weather app, keep it or reinstall it later.",
       undo: "Reinstall 'MSN Weather' from the Microsoft Store any time.",
     },
     "app-solitaire": {
-      title: "Remove Solitaire",
+      title: "Uninstall Solitaire",
       summary: "Removes the ad-stuffed Solitaire collection.",
       what: "Uninstalls Microsoft Solitaire Collection, which interrupts card games with video ads unless you pay monthly.",
       tradeoff:
@@ -247,26 +251,26 @@ export const en = {
       undo: "Reinstall 'Microsoft Solitaire Collection' from the Microsoft Store any time.",
     },
     "app-gethelp": {
-      title: "Remove Get Help app",
+      title: "Uninstall Get Help app",
       summary: "Removes Microsoft's support-chat app.",
       what: "Uninstalls Get Help, the app that opens when Windows wants to route you to Microsoft support articles and chat.",
       tradeoff: "If you ever contact Microsoft support, you would reinstall it first.",
       undo: "Reinstall 'Get Help' from the Microsoft Store any time.",
     },
     "app-feedback": {
-      title: "Remove Feedback Hub",
+      title: "Uninstall Feedback Hub",
       summary: "Removes the app for sending feedback to Microsoft.",
       what: "Uninstalls Feedback Hub, which most people open exactly once, by accident, from a keyboard shortcut.",
       undo: "Reinstall 'Feedback Hub' from the Microsoft Store any time.",
     },
     "app-bingsearch": {
-      title: "Remove Bing Search app",
+      title: "Uninstall Bing Search app",
       summary: "Removes the 'Web Search from Microsoft Bing' component.",
       what: "Uninstalls the Bing web search app added in recent Windows versions. Pairs well with the Start menu web results switch below.",
       undo: "Reinstall it from the Microsoft Store any time.",
     },
     "app-powerautomate": {
-      title: "Remove Power Automate",
+      title: "Uninstall Power Automate",
       summary: "Removes Microsoft's workflow automation stub.",
       what: "Uninstalls Power Automate Desktop, preinstalled for enterprise automation almost no home user touches.",
       undo: "Reinstall 'Power Automate' from the Microsoft Store any time.",
@@ -274,7 +278,7 @@ export const en = {
 
     // ---- Start, search, taskbar ----------------------------------------
     "websearch-off": {
-      title: "Remove Bing from Start search",
+      title: "Turn off Bing in Start search",
       summary: "Start search shows your apps and files, not web results.",
       what: "Sets the policy that removes web suggestions from Start menu search. Takes effect after you sign out and back in.",
       tradeoff:
@@ -282,7 +286,7 @@ export const en = {
       undo: "Flip the toggle off and apply, then sign out and in.",
     },
     widgets: {
-      title: "Remove Widgets and taskbar news",
+      title: "Turn off Widgets and taskbar news",
       summary: "Removes the Widgets board and its taskbar weather-and-news button.",
       what: "Turns off the Widgets feature by policy and hides its taskbar button. The feed, the weather button, and the hover-over news panel all go.",
       tradeoff: "If you use the weather glance or the news feed, skip this one.",
@@ -297,7 +301,7 @@ export const en = {
 
     // ---- Copilot and AI -------------------------------------------------
     "app-copilot": {
-      title: "Remove Copilot",
+      title: "Uninstall Copilot",
       summary: "Uninstalls the Copilot app and its taskbar presence.",
       what: "Uninstalls the Copilot app. On current Windows versions this is the mechanism that actually works; the old 'turn off Copilot' policy is deprecated and ignored. The silent-install block above keeps promotions from re-adding it.",
       tradeoff: "If you use Copilot, keep it. It reinstalls free from the Store.",
@@ -359,7 +363,7 @@ export const en = {
 
     // ---- Apps you might use --------------------------------------------
     "app-onedrive": {
-      title: "Remove OneDrive",
+      title: "Uninstall OneDrive",
       summary: "Uninstalls the OneDrive sync app and stops its sign-in nags.",
       what: "Runs Microsoft's own OneDrive uninstaller and sets the policy that keeps it from running. Files already on this PC stay where they are, and everything in the cloud stays at onedrive.com. Nothing is deleted.",
       tradeoff:
@@ -367,49 +371,49 @@ export const en = {
       undo: "Flip the toggle off and apply to lift the block, then reinstall OneDrive from microsoft.com/onedrive.",
     },
     "app-phonelink": {
-      title: "Remove Phone Link",
+      title: "Uninstall Phone Link",
       summary: "Removes phone integration: texts, calls, and photos on this PC.",
       what: "Uninstalls Phone Link and its cross-device helper together; removing only one leaves phone integration half-broken, so Deflater treats them as a set.",
       tradeoff: "No more phone notifications, texts, or photos on this PC until reinstalled.",
       undo: "Reinstall 'Phone Link' from the Microsoft Store; the helper comes back with it.",
     },
     "app-teams": {
-      title: "Remove Microsoft Teams",
+      title: "Uninstall Microsoft Teams",
       summary: "Removes the preinstalled Teams app.",
       what: "Uninstalls the Teams app Windows preinstalls and pins. If work or school uses Teams in the browser, that still works.",
       tradeoff: "Keep it if family, work, or school call you on Teams.",
       undo: "Reinstall 'Microsoft Teams' from the Microsoft Store any time.",
     },
     "app-outlook": {
-      title: "Remove new Outlook",
+      title: "Uninstall new Outlook",
       summary: "Removes the new Outlook mail app.",
       what: "Uninstalls the 'new Outlook for Windows' that replaced Mail and Calendar. Your mail lives on the server and is untouched; other mail apps keep working.",
       tradeoff: "Keep it if it is your mail app.",
       undo: "Reinstall 'Outlook for Windows' from the Microsoft Store any time.",
     },
     "app-clipchamp": {
-      title: "Remove Clipchamp",
+      title: "Uninstall Clipchamp",
       summary: "Removes Microsoft's video editor.",
       what: "Uninstalls Clipchamp.",
       tradeoff: "Keep it if you edit videos with it.",
       undo: "Reinstall 'Clipchamp' from the Microsoft Store any time.",
     },
     "app-todo": {
-      title: "Remove Microsoft To Do",
+      title: "Uninstall Microsoft To Do",
       summary: "Removes the To Do list app.",
       what: "Uninstalls Microsoft To Do. Your lists live in your Microsoft account and reappear if you ever reinstall.",
       tradeoff: "Keep it if you use it for lists and reminders.",
       undo: "Reinstall 'Microsoft To Do' from the Microsoft Store any time.",
     },
     "app-family": {
-      title: "Remove Family Safety",
+      title: "Uninstall Family Safety",
       summary: "Removes the parental controls app.",
       what: "Uninstalls Microsoft Family Safety.",
       tradeoff: "Do not remove this on a child's PC or a PC managed with family screen-time rules.",
       undo: "Reinstall 'Microsoft Family Safety' from the Microsoft Store any time.",
     },
     "app-quickassist": {
-      title: "Remove Quick Assist",
+      title: "Uninstall Quick Assist",
       summary: "Removes the remote assistance app scammers love.",
       what: "Uninstalls Quick Assist, the built-in remote control tool. Phone scammers talk victims into opening it far more often than family IT does. Removing it is a small safety upgrade for most homes.",
       tradeoff:

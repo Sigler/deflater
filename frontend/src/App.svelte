@@ -30,6 +30,12 @@
     report?.fixes.filter((f) => f.status === "on" || f.status === "removed").length ?? 0,
   );
 
+  // Keep the backend informed so closing the window can warn about
+  // staged changes that were never applied.
+  $effect(() => {
+    if (report) void api.setDirty(applying ? 0 : changeCount);
+  });
+
   function byCategory(cat: string) {
     return report?.fixes.filter((f) => f.category === cat) ?? [];
   }
