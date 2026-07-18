@@ -13,6 +13,30 @@ Notes captured during testing. Not yet actioned — just tracked.
   broadly: consider **sub-settings** for fixes that bundle actions, so a
   user can e.g. keep an app installed but turn off just its nags.
 
+  DESIGN PROPOSAL (sub-settings) — needs sign-off before building:
+  - Today the only genuinely bundled fix is `app-onedrive`: it writes the
+    `DisableFileSyncNGSC` policy AND runs Microsoft's uninstaller. Every
+    other fix is already single-purpose, so this is a small surface, not a
+    catalog-wide refactor.
+  - Recommended approach: NOT a generic nested-toggle engine (over-built
+    for one case, and nested toggles complicate the apply/revert/snapshot
+    model and the profiles). Instead, express a bundle as two normal
+    catalog fixes with a lightweight "parent/child" grouping for display:
+    e.g. `onedrive-block` (Switch: the policy, reversible) and
+    `onedrive-uninstall` (the uninstaller, reinstall-from-Store). The row
+    renders them as one card with a primary toggle and a secondary
+    "also uninstall it" sub-toggle, but underneath they're independent
+    fixes the engine already knows how to apply and revert.
+  - This reuses all existing machinery (status, snapshots, profiles,
+    refresh, maintenance) with only a UI grouping field (e.g.
+    `Group string` on Fix, plus a `Primary bool`) instead of a new
+    apply/revert code path. Profiles pick children independently.
+  - Open question for the user: is OneDrive the only case worth splitting,
+    or are there others (e.g. an app whose nags could be silenced without
+    removing it)? That answer decides whether even this light grouping is
+    worth it, or whether a doc note ("uninstall is all-or-nothing") is
+    enough for now.
+
 ## LG companion app — mechanism & our fix (2026-07-18)
 
 Reproduced live: plugging in an LG UltraGear monitor makes DeviceSetup-
