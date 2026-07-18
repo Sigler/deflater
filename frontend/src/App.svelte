@@ -13,6 +13,8 @@
   import MaintenanceCard from "./lib/components/MaintenanceCard.svelte";
   import Modal from "./lib/components/Modal.svelte";
   import ScanBar from "./lib/components/ScanBar.svelte";
+  import ToastHost from "./lib/components/ToastHost.svelte";
+  import { clearToasts, pushToast } from "./lib/toasts.svelte";
   import type { FixResult, Report, UpdateInfo } from "./lib/types";
 
   let report = $state<Report | null>(null);
@@ -21,9 +23,6 @@
   let applying = $state(false);
   let progressText = $state("");
   let showElevateModal = $state(false);
-  let doneMessage = $state("");
-  let doneWarn = $state(false);
-  let failures = $state<FixResult[]>([]);
   let maintenancePendingElevation = $state(false);
   let watcherPendingElevation = $state(false);
   let update = $state<UpdateInfo | null>(null);
@@ -118,9 +117,9 @@
           try {
             await api.removeConflictingTasks(pending.removeTasks);
             report = await api.getReport();
+            pushToast({ kind: "success", message: S.conflicts.removed });
           } catch (e) {
-            doneWarn = true;
-            doneMessage = `${e}`;
+            pushToast({ kind: "warn", message: `${e}`, sticky: true });
           }
         }
       }
@@ -140,9 +139,6 @@
 
   async function runApply(enable: string[], disable: string[]) {
     applying = true;
-    doneMessage = "";
-    doneWarn = false;
-    failures = [];
     try {
       const outcome = await api.apply(enable, disable);
       if (outcome.needsElevation) {
@@ -150,14 +146,6 @@
         return;
       }
       const failed = (outcome.results ?? []).filter((r) => !r.ok);
-      failures = failed;
-      if (outcome.saveWarning) {
-        doneWarn = true;
-        doneMessage = S.apply.saveWarning;
-      } else {
-        doneWarn = failed.length > 0;
-        doneMessage = failed.length > 0 ? S.apply.doneSomeFailed(failed.length) : S.apply.doneBody;
-      }
       const r = await api.getReport();
       report = r;
       // Reflect reality, but keep failed enables selected so the user can
@@ -167,13 +155,39 @@
       selection = new SvelteSet(next);
       maintenancePendingElevation = false;
       watcherPendingElevation = false;
+      announceApply(outcome.saveWarning ?? "", failed, r.maintenance);
     } catch (e) {
-      doneWarn = true;
-      doneMessage = `${S.apply.applyError} ${e}`;
+      pushToast({ kind: "warn", message: S.apply.applyError, detail: [`${e}`], sticky: true });
     } finally {
       applying = false;
       progressText = "";
     }
+  }
+
+  // Turn an apply outcome into the right toast: a sticky warning when
+  // something failed or couldn't be recorded, otherwise a quick success
+  // note (with the maintenance nudge only when maintenance is still off).
+  function announceApply(saveWarning: string, failed: FixResult[], maintenance: boolean) {
+    if (saveWarning) {
+      pushToast({ kind: "warn", message: S.apply.saveWarning, sticky: true });
+      return;
+    }
+    if (failed.length > 0) {
+      pushToast({
+        kind: "warn",
+        message: S.apply.doneSomeFailed(failed.length),
+        detail: failed.map(
+          (f) => `${S.fixes[f.id as keyof typeof S.fixes]?.title ?? f.id}: ${f.error}`,
+        ),
+        sticky: true,
+      });
+      return;
+    }
+    pushToast({
+      kind: "success",
+      message: S.apply.doneClean,
+      detail: maintenance ? undefined : [S.apply.doneMaintenanceTip],
+    });
   }
 
   function apply() {
@@ -199,14 +213,12 @@
 
   function reset() {
     if (report) selection = new SvelteSet(initialSelection(report.fixes, report.managed));
-    doneMessage = "";
-    failures = [];
+    clearToasts();
   }
 
   function toggleFix(id: string, value: boolean) {
     if (value) selection.add(id);
     else selection.delete(id);
-    doneMessage = "";
   }
 
   async function setMaintenance(on: boolean) {
@@ -218,8 +230,7 @@
     } catch (e) {
       report.maintenance = !on; // roll the toggle back to reality
       maintenancePendingElevation = false;
-      doneWarn = true;
-      doneMessage = `${e}`;
+      pushToast({ kind: "warn", message: `${e}`, sticky: true });
     }
   }
 
@@ -232,8 +243,7 @@
     } catch (e) {
       report.watcher = !on;
       watcherPendingElevation = false;
-      doneWarn = true;
-      doneMessage = `${e}`;
+      pushToast({ kind: "warn", message: `${e}`, sticky: true });
     }
   }
 
@@ -250,6 +260,7 @@
     if (report.elevated) {
       await api.removeConflictingTasks([name]);
       report = await api.getReport();
+      pushToast({ kind: "success", message: S.conflicts.removed });
     } else {
       await api.stageTaskRemovalAndElevate(name);
     }
@@ -290,18 +301,6 @@
           ondismiss={dismissAlerts}
         />
         <ConflictBanner tasks={report.conflictingTasks} onremove={removeConflictingTask} />
-
-        {#if doneMessage}
-          <div class="done" class:warn={doneWarn}>
-            <p>{doneMessage}</p>
-            {#each failures as f (f.id)}
-              <p class="fail">{S.fixes[f.id as keyof typeof S.fixes]?.title ?? f.id}: {f.error}</p>
-            {/each}
-            {#if !doneWarn && failures.length === 0 && !report.maintenance}
-              <p class="tip">{S.apply.doneMaintenanceTip}</p>
-            {/if}
-          </div>
-        {/if}
 
         <div class="stickytop">
           <ScanBar inPlace={inPlaceCount} total={report.fixes.length} />
@@ -374,6 +373,8 @@
     {/snippet}
   </Modal>
 {/if}
+
+<ToastHost />
 
 <style>
   .page {
@@ -497,14 +498,6 @@
   .done.warn {
     background: var(--gold-soft);
     border-color: rgba(214, 164, 76, 0.35);
-  }
-  .fail {
-    font-size: 12px;
-    color: var(--text-dim);
-  }
-  .tip {
-    font-size: 12px;
-    color: var(--text-dim);
   }
   footer {
     display: flex;

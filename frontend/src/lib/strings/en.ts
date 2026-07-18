@@ -125,9 +125,7 @@ export const en = {
     doneMaintenanceTip:
       "Tip: turn on 'Keep it fixed automatically' near the bottom, so a Windows update cannot quietly undo this.",
     doneSomeFailed: (n: number) =>
-      n === 1
-        ? "1 change did not apply. Details below."
-        : `${n} changes did not apply. Details below.`,
+      n === 1 ? "1 change didn't apply." : `${n} changes didn't apply.`,
     saveWarning:
       "Your changes were applied, but Deflater couldn't save a record of them. Maintenance may not track them. Details are in the logs.",
     applyError: "Something went wrong applying your changes:",
@@ -137,6 +135,11 @@ export const en = {
     elevateConfirm: "Continue",
     elevateCancel: "Not now",
     resuming: "Continuing your changes…",
+    doneClean: "All changes applied.",
+  },
+
+  toast: {
+    dismiss: "Dismiss",
   },
 
   maintenance: {
@@ -168,6 +171,7 @@ export const en = {
     removing: "Removing…",
     // {tool} names the tool the task belongs to.
     fromTool: (tool: string) => `from ${tool}`,
+    removed: "Removed the conflicting scheduled task.",
   },
 
   footer: {
