@@ -75,9 +75,19 @@ export const en = {
   },
 
   status: {
-    fixed: "Fixed",
-    partly: "Partly fixed",
+    on: "On",
+    off: "Off",
+    partlyOn: "Partly on",
+    installed: "Installed",
     notInstalled: "Not installed",
+    blocked: "Blocked",
+    notBlocked: "Not blocked",
+    partlyBlocked: "Partly blocked",
+    willTurnOn: "Will turn on",
+    willTurnOff: "Will turn off",
+    willRemove: "Will remove",
+    willBlock: "Will block",
+    willUnblock: "Will unblock",
     unknown: "Unknown",
   },
 
@@ -147,31 +157,31 @@ export const en = {
   fixes: {
     // ---- Ads and nags ---------------------------------------------------
     "lockscreen-ads": {
-      title: "Lock screen ads",
+      title: "Block lock screen ads",
       summary: "Stops the tips, quizzes, and app offers on your lock screen.",
       what: "Turns off the two switches behind the lock screen's rotating 'fun facts, tips, and more', which is where Microsoft slots promotions. Your lock screen wallpaper, including Spotlight photos, stays exactly as you set it.",
       undo: "Flip the toggle off and apply. The Settings switches go back to their defaults.",
     },
     "explorer-ads": {
-      title: "File Explorer ads",
+      title: "Hide File Explorer ads",
       summary: "Removes OneDrive and Office promo banners inside File Explorer.",
       what: "Turns off 'sync provider notifications', the mechanism that puts subscription offers above your own files. Explorer applies it after your next sign-in.",
       undo: "Flip the toggle off and apply.",
     },
     "scoobe-off": {
-      title: "'Finish setting up' screens",
+      title: "Stop 'finish setting up' screens",
       summary: "Stops the full-screen 'Let's finish setting up your device' interruptions.",
       what: "Turns off the suggestion screen Windows shows after updates that pushes Microsoft 365, OneDrive backup, and a Microsoft account. One per-user setting, the same one buried in Settings under Notifications.",
       undo: "Flip the toggle off and apply.",
     },
     "suggested-toasts-off": {
-      title: "'Get even more out of Windows' popups",
+      title: "Silence 'Get even more' popups",
       summary: "Silences the suggestion notifications in the corner of your screen.",
       what: "Turns off the notification sender Windows uses for upsell toasts. Real notifications from your apps are untouched.",
       undo: "Flip the toggle off and apply.",
     },
     "settings-suggestions": {
-      title: "Suggestions in Settings and Start",
+      title: "Clear Start and Settings suggestions",
       summary: "Clears promoted apps and 'tips' from Start and the Settings app.",
       what: "Turns off nine suggestion switches: promoted content in Settings, app suggestions in Start, 'recommendations for tips and new apps', and the welcome experience after updates.",
       tradeoff:
@@ -179,7 +189,7 @@ export const en = {
       undo: "Flip the toggle off and apply.",
     },
     "edge-nags": {
-      title: "Edge nags and background running",
+      title: "Stop Edge nags and background running",
       summary: "Stops Edge running in the background and pushing its sidebar and offers.",
       what: "Sets five Edge policies: no startup boost, no background mode, no Copilot sidebar, no recommendation popups, and no sending your browsing personalization data.",
       tradeoff:
@@ -187,7 +197,7 @@ export const en = {
       undo: "Flip the toggle off and apply. The policies are deleted and the label disappears.",
     },
     "edge-shortcut": {
-      title: "Edge desktop shortcut resurrection",
+      title: "Stop Edge shortcut resurrection",
       summary: "Stops Edge re-creating its desktop shortcut after every update.",
       what: "Sets the two Edge updater policies that control shortcut creation. Note: applying this also removes an Edge desktop shortcut if one exists now.",
       tradeoff: "If you like having the Edge icon on your desktop, skip this one.",
@@ -196,13 +206,13 @@ export const en = {
 
     // ---- Junk apps ------------------------------------------------------
     "silent-app-installs": {
-      title: "Apps installing themselves",
+      title: "Block self-installing apps",
       summary: "Blocks the pipeline that installs promoted apps without asking.",
       what: "Turns off the 'content delivery' switches Windows uses to silently install suggested Store apps and pin promo tiles, the same pipeline that famously delivered Candy Crush. Also sets the matching machine-wide policies for good measure.",
       undo: "Flip the toggle off and apply.",
     },
     "device-metadata-off": {
-      title: "Manufacturer auto-installs",
+      title: "Block manufacturer auto-installs",
       summary: "Stops hardware makers auto-installing their apps when you plug things in.",
       what: "Turns off automatic download of manufacturers' apps and custom icons for devices, the switch behind recent cases like LG software arriving on its own. Set both as the official policy and in the Settings screen, so the UI reflects it. Driver installation through Windows Update is not affected.",
       tradeoff:
@@ -210,26 +220,26 @@ export const en = {
       undo: "Flip the toggle off and apply.",
     },
     "app-officehub": {
-      title: "Microsoft 365 promo hub",
+      title: "Remove Microsoft 365 promo hub",
       summary: "Removes the Microsoft 365 app that mostly sells subscriptions.",
       what: "Uninstalls the Microsoft 365 hub app. This is the promo shell, not Office itself: Word, Excel, and your documents are untouched whether or not you have Office installed.",
       undo: "Reinstall 'Microsoft 365' from the Microsoft Store any time.",
     },
     "app-news": {
-      title: "News app",
+      title: "Remove News app",
       summary: "Removes Microsoft's Bing-powered news app.",
       what: "Uninstalls Microsoft News for every account on this PC and stops Windows re-adding it for new accounts.",
       undo: "Reinstall 'Microsoft News' from the Microsoft Store any time.",
     },
     "app-weather": {
-      title: "Weather app",
+      title: "Remove Weather app",
       summary: "Removes the MSN Weather app.",
       what: "Uninstalls MSN Weather. The taskbar weather button is separate; that belongs to Widgets, covered below.",
       tradeoff: "If you actually open the Weather app, keep it or reinstall it later.",
       undo: "Reinstall 'MSN Weather' from the Microsoft Store any time.",
     },
     "app-solitaire": {
-      title: "Solitaire",
+      title: "Remove Solitaire",
       summary: "Removes the ad-stuffed Solitaire collection.",
       what: "Uninstalls Microsoft Solitaire Collection, which interrupts card games with video ads unless you pay monthly.",
       tradeoff:
@@ -237,26 +247,26 @@ export const en = {
       undo: "Reinstall 'Microsoft Solitaire Collection' from the Microsoft Store any time.",
     },
     "app-gethelp": {
-      title: "Get Help app",
+      title: "Remove Get Help app",
       summary: "Removes Microsoft's support-chat app.",
       what: "Uninstalls Get Help, the app that opens when Windows wants to route you to Microsoft support articles and chat.",
       tradeoff: "If you ever contact Microsoft support, you would reinstall it first.",
       undo: "Reinstall 'Get Help' from the Microsoft Store any time.",
     },
     "app-feedback": {
-      title: "Feedback Hub",
+      title: "Remove Feedback Hub",
       summary: "Removes the app for sending feedback to Microsoft.",
       what: "Uninstalls Feedback Hub, which most people open exactly once, by accident, from a keyboard shortcut.",
       undo: "Reinstall 'Feedback Hub' from the Microsoft Store any time.",
     },
     "app-bingsearch": {
-      title: "Bing Search app",
+      title: "Remove Bing Search app",
       summary: "Removes the 'Web Search from Microsoft Bing' component.",
       what: "Uninstalls the Bing web search app added in recent Windows versions. Pairs well with the Start menu web results switch below.",
       undo: "Reinstall it from the Microsoft Store any time.",
     },
     "app-powerautomate": {
-      title: "Power Automate",
+      title: "Remove Power Automate",
       summary: "Removes Microsoft's workflow automation stub.",
       what: "Uninstalls Power Automate Desktop, preinstalled for enterprise automation almost no home user touches.",
       undo: "Reinstall 'Power Automate' from the Microsoft Store any time.",
@@ -264,7 +274,7 @@ export const en = {
 
     // ---- Start, search, taskbar ----------------------------------------
     "websearch-off": {
-      title: "Bing in Start menu search",
+      title: "Remove Bing from Start search",
       summary: "Start search shows your apps and files, not web results.",
       what: "Sets the policy that removes web suggestions from Start menu search. Takes effect after you sign out and back in.",
       tradeoff:
@@ -272,14 +282,14 @@ export const en = {
       undo: "Flip the toggle off and apply, then sign out and in.",
     },
     widgets: {
-      title: "Widgets and taskbar news",
+      title: "Remove Widgets and taskbar news",
       summary: "Removes the Widgets board and its taskbar weather-and-news button.",
       what: "Turns off the Widgets feature by policy and hides its taskbar button. The feed, the weather button, and the hover-over news panel all go.",
       tradeoff: "If you use the weather glance or the news feed, skip this one.",
       undo: "Flip the toggle off and apply. The button returns after a sign-out.",
     },
     "search-highlights": {
-      title: "Search box doodles",
+      title: "Stop search box doodles",
       summary: "Stops the daily Bing artwork and trending content in the search box.",
       what: "Turns off 'search highlights', the rotating illustrations and trending searches Microsoft pipes into the taskbar search box.",
       undo: "Flip the toggle off and apply.",
@@ -287,14 +297,14 @@ export const en = {
 
     // ---- Copilot and AI -------------------------------------------------
     "app-copilot": {
-      title: "Copilot",
-      summary: "Removes the Copilot app and its taskbar presence.",
+      title: "Remove Copilot",
+      summary: "Uninstalls the Copilot app and its taskbar presence.",
       what: "Uninstalls the Copilot app. On current Windows versions this is the mechanism that actually works; the old 'turn off Copilot' policy is deprecated and ignored. The silent-install block above keeps promotions from re-adding it.",
       tradeoff: "If you use Copilot, keep it. It reinstalls free from the Store.",
       undo: "Reinstall 'Microsoft Copilot' from the Microsoft Store any time.",
     },
     "recall-off": {
-      title: "Recall screen snapshots",
+      title: "Block Recall screen snapshots",
       summary: "Stops Windows taking searchable screenshots of what you do.",
       what: "Sets the policies that turn off Recall's snapshot saving and block the feature from being enabled. On PCs where Recall was active, existing snapshots are deleted by Windows as part of switching it off, and a restart completes it. On PCs without Recall this simply locks the door in advance.",
       tradeoff:
@@ -302,7 +312,7 @@ export const en = {
       undo: "Flip the toggle off and apply. Recall becomes available again; past snapshots are gone.",
     },
     "click-to-do-off": {
-      title: "Click to Do",
+      title: "Turn off Click to Do",
       summary: "Turns off the AI actions layer over your screen.",
       what: "Sets the policy that disables Click to Do, the feature that analyzes what is on screen to offer AI actions. Harmless no-op on PCs that do not have it.",
       undo: "Flip the toggle off and apply.",
@@ -310,38 +320,38 @@ export const en = {
 
     // ---- Privacy --------------------------------------------------------
     "advertising-id": {
-      title: "Personalized ad tracking",
+      title: "Stop personalized ad tracking",
       summary: "Stops apps using your advertising ID to profile you.",
       what: "Disables the advertising ID by policy and flips the matching Settings switch. Apps can no longer tie ads to your identity across apps.",
       tradeoff: "You see the same number of ads, just not tailored to you.",
       undo: "Flip the toggle off and apply.",
     },
     "telemetry-minimum": {
-      title: "Diagnostic data to minimum",
+      title: "Minimize diagnostic data",
       summary: "Dials Windows diagnostic reporting down to the required minimum.",
       what: "Sets diagnostic data to 'Required', the lowest level Windows Home and Pro honor, and stops Windows asking you for feedback. Honest note: this is a minimum, not off; only Enterprise editions can go lower.",
       undo: "Flip the toggle off and apply.",
     },
     "tailored-experiences": {
-      title: "Personalized tips and offers",
+      title: "Stop personalized tips and offers",
       summary: "Stops Microsoft using your diagnostic data to target tips and ads at you.",
       what: "Turns off 'tailored experiences' both as the user policy and the Settings switch, so diagnostic data cannot feed personalized promotions.",
       undo: "Flip the toggle off and apply.",
     },
     "activity-history": {
-      title: "Activity history",
+      title: "Stop activity history",
       summary: "Stops Windows recording a timeline of what you open and do.",
       what: "Turns off activity publishing by policy. Windows stops accumulating the activity feed some features use for 'pick up where you left off' suggestions.",
       undo: "Flip the toggle off and apply.",
     },
     "inking-personalization": {
-      title: "Typing personalization",
+      title: "Stop typing personalization",
       summary: "Stops Windows building a profile from what you type and write.",
       what: "Turns off inking and typing personalization, the custom dictionary Windows builds from your writing, including the contacts harvesting switch. Autocorrect and normal typing suggestions still work.",
       undo: "Flip the toggle off and apply.",
     },
     "delivery-optimization": {
-      title: "Uploading updates to strangers",
+      title: "Stop uploading updates to strangers",
       summary: "Stops your bandwidth being used to send Windows updates to other people.",
       what: "Limits update sharing to your own local network. Updates download and install exactly as before; your PC just stops seeding them to the internet.",
       undo: "Flip the toggle off and apply.",
@@ -349,7 +359,7 @@ export const en = {
 
     // ---- Apps you might use --------------------------------------------
     "app-onedrive": {
-      title: "OneDrive",
+      title: "Remove OneDrive",
       summary: "Uninstalls the OneDrive sync app and stops its sign-in nags.",
       what: "Runs Microsoft's own OneDrive uninstaller and sets the policy that keeps it from running. Files already on this PC stay where they are, and everything in the cloud stays at onedrive.com. Nothing is deleted.",
       tradeoff:
@@ -357,49 +367,49 @@ export const en = {
       undo: "Flip the toggle off and apply to lift the block, then reinstall OneDrive from microsoft.com/onedrive.",
     },
     "app-phonelink": {
-      title: "Phone Link",
+      title: "Remove Phone Link",
       summary: "Removes phone integration: texts, calls, and photos on this PC.",
       what: "Uninstalls Phone Link and its cross-device helper together; removing only one leaves phone integration half-broken, so Deflater treats them as a set.",
       tradeoff: "No more phone notifications, texts, or photos on this PC until reinstalled.",
       undo: "Reinstall 'Phone Link' from the Microsoft Store; the helper comes back with it.",
     },
     "app-teams": {
-      title: "Microsoft Teams",
+      title: "Remove Microsoft Teams",
       summary: "Removes the preinstalled Teams app.",
       what: "Uninstalls the Teams app Windows preinstalls and pins. If work or school uses Teams in the browser, that still works.",
       tradeoff: "Keep it if family, work, or school call you on Teams.",
       undo: "Reinstall 'Microsoft Teams' from the Microsoft Store any time.",
     },
     "app-outlook": {
-      title: "New Outlook",
+      title: "Remove new Outlook",
       summary: "Removes the new Outlook mail app.",
       what: "Uninstalls the 'new Outlook for Windows' that replaced Mail and Calendar. Your mail lives on the server and is untouched; other mail apps keep working.",
       tradeoff: "Keep it if it is your mail app.",
       undo: "Reinstall 'Outlook for Windows' from the Microsoft Store any time.",
     },
     "app-clipchamp": {
-      title: "Clipchamp video editor",
+      title: "Remove Clipchamp",
       summary: "Removes Microsoft's video editor.",
       what: "Uninstalls Clipchamp.",
       tradeoff: "Keep it if you edit videos with it.",
       undo: "Reinstall 'Clipchamp' from the Microsoft Store any time.",
     },
     "app-todo": {
-      title: "Microsoft To Do",
+      title: "Remove Microsoft To Do",
       summary: "Removes the To Do list app.",
       what: "Uninstalls Microsoft To Do. Your lists live in your Microsoft account and reappear if you ever reinstall.",
       tradeoff: "Keep it if you use it for lists and reminders.",
       undo: "Reinstall 'Microsoft To Do' from the Microsoft Store any time.",
     },
     "app-family": {
-      title: "Family Safety",
+      title: "Remove Family Safety",
       summary: "Removes the parental controls app.",
       what: "Uninstalls Microsoft Family Safety.",
       tradeoff: "Do not remove this on a child's PC or a PC managed with family screen-time rules.",
       undo: "Reinstall 'Microsoft Family Safety' from the Microsoft Store any time.",
     },
     "app-quickassist": {
-      title: "Quick Assist",
+      title: "Remove Quick Assist",
       summary: "Removes the remote assistance app scammers love.",
       what: "Uninstalls Quick Assist, the built-in remote control tool. Phone scammers talk victims into opening it far more often than family IT does. Removing it is a small safety upgrade for most homes.",
       tradeoff:

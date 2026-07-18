@@ -65,16 +65,18 @@
       </span>
       <span class="summary">{text?.summary ?? ""}</span>
     </button>
-    <StatusChip status={fix.status} kind={fix.kind} />
-    {#if pending}
-      <span class="pending" title={S.badges.willChange} aria-label={S.badges.willChange}></span>
-    {/if}
+    <StatusChip status={fix.status} kind={fix.kind} {selected} {pending} />
     <Toggle
       checked={selected}
       disabled={locked}
       label={text?.title ?? fix.id}
       onchange={(v) => ontoggle(fix.id, v)}
     />
+    <span class="dotslot" aria-hidden={!pending}>
+      {#if pending}
+        <span class="pending" title={S.badges.willChange} aria-label={S.badges.willChange}></span>
+      {/if}
+    </span>
   </div>
 
   {#if expanded && text}
@@ -163,8 +165,14 @@
     color: var(--text-dim);
     font-size: 12.5px;
   }
-  .pending {
+  /* Reserved slot so the dot never shifts the layout when it appears. */
+  .dotslot {
     flex: none;
+    width: 8px;
+    display: flex;
+    justify-content: center;
+  }
+  .pending {
     width: 6px;
     height: 6px;
     border-radius: 50%;

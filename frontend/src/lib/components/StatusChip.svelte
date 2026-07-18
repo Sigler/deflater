@@ -2,25 +2,44 @@
   import { S } from "../i18n";
   import type { FixKind, FixStatus } from "../types";
 
-  let { status, kind }: { status: FixStatus; kind: FixKind } = $props();
+  let {
+    status,
+    kind,
+    selected,
+    pending,
+  }: { status: FixStatus; kind: FixKind; selected: boolean; pending: boolean } = $props();
 
   const isApp = $derived(kind === "app-junk" || kind === "app-might");
 
-  // Chips speak only when there is something worth saying: the fix is
-  // already in place, partly in place, or the app is already gone.
-  // Untouched rows stay quiet.
-  const chip = $derived.by((): { label: string; tone: string } | null => {
-    if (status === "on") return { label: S.status.fixed, tone: "good" };
-    if (status === "partial") return { label: S.status.partly, tone: "mixed" };
-    if (status === "removed" && isApp) return { label: S.status.notInstalled, tone: "good" };
+  // The chip answers, in the row's own vocabulary, either "what is this
+  // right now?" or, when the toggle diverges from reality, "what will
+  // happen when you apply?" Future tense implies the present, so the two
+  // are never shown together.
+  const chip = $derived.by((): { label: string; tone: string } => {
+    if (pending) {
+      if (isApp) return { label: S.status.willRemove, tone: "change" };
+      if (kind === "onedrive")
+        return { label: selected ? S.status.willBlock : S.status.willUnblock, tone: "change" };
+      return { label: selected ? S.status.willTurnOn : S.status.willTurnOff, tone: "change" };
+    }
     if (status === "unknown") return { label: S.status.unknown, tone: "neutral" };
-    return null;
+    if (isApp) {
+      return status === "removed"
+        ? { label: S.status.notInstalled, tone: "good" }
+        : { label: S.status.installed, tone: "neutral" };
+    }
+    if (kind === "onedrive") {
+      if (status === "on") return { label: S.status.blocked, tone: "good" };
+      if (status === "partial") return { label: S.status.partlyBlocked, tone: "mixed" };
+      return { label: S.status.notBlocked, tone: "neutral" };
+    }
+    if (status === "on") return { label: S.status.on, tone: "good" };
+    if (status === "partial") return { label: S.status.partlyOn, tone: "mixed" };
+    return { label: S.status.off, tone: "neutral" };
   });
 </script>
 
-{#if chip}
-  <span class="chip {chip.tone}">{chip.label}</span>
-{/if}
+<span class="chip {chip.tone}">{chip.label}</span>
 
 <style>
   .chip {
@@ -40,5 +59,9 @@
   .chip.mixed {
     background: var(--gold-soft);
     color: var(--gold);
+  }
+  .chip.change {
+    background: var(--coral-soft);
+    color: var(--coral-bright);
   }
 </style>
