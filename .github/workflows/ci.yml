@@ -26,6 +26,13 @@ jobs:
           npm run lint
           npm test
 
+      # frontend/dist is gitignored build output, but the Go embed needs
+      # it to exist before the frontend has ever been built.
+      - name: Stub frontend dist for Go embed
+        run: |
+          New-Item -ItemType Directory -Force frontend/dist | Out-Null
+          Set-Content frontend/dist/index.html "placeholder"
+
       - name: Go checks
         run: |
           go vet ./...

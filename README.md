@@ -44,7 +44,7 @@ wails dev            # development with live reload
 Checks:
 
 ```powershell
-go test ./...        # from the repo root
+go test ./...        # from the repo root; run wails build once first on a fresh clone
 npm run lint         # from frontend/
 npm run check
 npm test
