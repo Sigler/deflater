@@ -111,6 +111,31 @@
 
   const resultCount = $derived(report?.fixes.filter(matchesQuery).length ?? 0);
 
+  // Re-read the machine so the UI reflects reality when something changed
+  // behind our back: an app reinstalled from the Store, or a setting
+  // flipped by another tool. Runs on window focus and a gentle heartbeat.
+  // When the user has no pending edits we re-derive the selection too, so
+  // drift in a managed fix shows up as a ready-to-apply change; mid-edit
+  // we only refresh statuses and leave their selection untouched.
+  async function refreshReport() {
+    if (!report || applying) return;
+    const atRest = changeCount === 0;
+    try {
+      const r = await api.getReport();
+      report = r;
+      if (atRest) selection = new SvelteSet(initialSelection(r.fixes, r.managed));
+    } catch {
+      // Transient read failure; the next tick tries again.
+    }
+  }
+
+  $effect(() => {
+    const id = setInterval(() => {
+      if (document.visibilityState === "visible") void refreshReport();
+    }, 45000);
+    return () => clearInterval(id);
+  });
+
   async function load() {
     loadError = "";
     try {
@@ -323,6 +348,8 @@
 
   void load();
 </script>
+
+<svelte:window onfocus={refreshReport} />
 
 {#if report === null}
   <div class="loading">
