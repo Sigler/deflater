@@ -17,7 +17,7 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
-const appVersion = "0.1.1"
+const appVersion = "0.1.2"
 
 func main() {
 	// One line at the very first moment of every launch, so an elevated
