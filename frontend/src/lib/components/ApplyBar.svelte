@@ -46,7 +46,8 @@
     backdrop-filter: blur(12px);
     border-top: 1px solid var(--stroke);
   }
-  /* Caution tape where the action happens, at a whisper. */
+  /* Caution tape where the action happens: coral over a navy darker
+     than the bar itself, so it reads as one continuous band. */
   .bar::before {
     content: "";
     position: absolute;
@@ -54,8 +55,11 @@
     left: 0;
     right: 0;
     height: 3px;
-    background: repeating-linear-gradient(-55deg, var(--coral) 0 10px, transparent 10px 20px);
-    opacity: 0.45;
+    background: repeating-linear-gradient(
+      -55deg,
+      rgba(229, 106, 77, 0.62) 0 10px,
+      #070c14 10px 20px
+    );
   }
   .count {
     font-size: 13px;
