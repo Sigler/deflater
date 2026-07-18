@@ -85,7 +85,6 @@ export const en = {
   },
 
   badges: {
-    caution: "Worth a look",
     willChange: "Changes when you apply",
   },
 
@@ -170,7 +169,7 @@ export const en = {
       undo: "Flip the toggle off and apply.",
     },
     "scoobe-off": {
-      title: "Stop 'finish setting up' screens",
+      title: "Turn off 'finish setting up' screens",
       summary: "Stops the full-screen 'Let's finish setting up your device' interruptions.",
       what: "Turns off the suggestion screen Windows shows after updates that pushes Microsoft 365, OneDrive backup, and a Microsoft account. One per-user setting, the same one buried in Settings under Notifications.",
       undo: "Flip the toggle off and apply.",
@@ -298,7 +297,7 @@ export const en = {
       undo: "Flip the toggle off and apply. The button returns after a sign-out.",
     },
     "search-highlights": {
-      title: "Stop search box doodles",
+      title: "Turn off search box doodles",
       summary: "Stops the daily Bing artwork and trending content in the search box.",
       what: "Turns off 'search highlights', the rotating illustrations and trending searches Microsoft pipes into the taskbar search box.",
       undo: "Flip the toggle off and apply.",
@@ -343,19 +342,19 @@ export const en = {
       undo: "Flip the toggle off and apply.",
     },
     "tailored-experiences": {
-      title: "Stop personalized tips and offers",
+      title: "Turn off personalized tips and offers",
       summary: "Stops Microsoft using your diagnostic data to target tips and ads at you.",
       what: "Turns off 'tailored experiences' both as the user policy and the Settings switch, so diagnostic data cannot feed personalized promotions.",
       undo: "Flip the toggle off and apply.",
     },
     "activity-history": {
-      title: "Stop activity history",
+      title: "Stop recording activity history",
       summary: "Stops Windows recording a timeline of what you open and do.",
       what: "Turns off activity publishing by policy. Windows stops accumulating the activity feed some features use for 'pick up where you left off' suggestions.",
       undo: "Flip the toggle off and apply.",
     },
     "inking-personalization": {
-      title: "Stop typing personalization",
+      title: "Turn off typing personalization",
       summary: "Stops Windows building a profile from what you type and write.",
       what: "Turns off inking and typing personalization, the custom dictionary Windows builds from your writing, including the contacts harvesting switch. Autocorrect and normal typing suggestions still work.",
       undo: "Flip the toggle off and apply.",

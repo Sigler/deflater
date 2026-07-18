@@ -61,11 +61,11 @@
             stroke-linejoin="round"
           />
         </svg>
-        {#if fix.caution}
-          <span class="caution">{S.badges.caution}</span>
-        {/if}
       </span>
       <span class="summary">{text?.summary ?? ""}</span>
+      {#if pending && selected && text?.tradeoff}
+        <span class="tradeoff" transition:slide={{ duration: 150 }}>{text.tradeoff}</span>
+      {/if}
     </button>
     <StatusChip status={fix.status} {selected} {pending} />
     {#if gone}
@@ -166,17 +166,17 @@
     transform: rotate(180deg);
     color: var(--coral);
   }
-  .caution {
-    font-size: 11px;
-    line-height: 1;
-    padding: 4px 8px;
-    border-radius: var(--r-chip);
-    background: var(--gold-soft);
-    color: var(--gold);
-  }
   .summary {
     color: var(--text-dim);
     font-size: 12.5px;
+  }
+  /* The specific tradeoff, shown only while the row is queued to apply,
+     while there is still time to change your mind. */
+  .tradeoff {
+    color: var(--gold);
+    font-size: 12.5px;
+    line-height: 1.45;
+    max-width: 62ch;
   }
   /* Reserved slot so the dot never shifts the layout when it appears. */
   .dotslot {
