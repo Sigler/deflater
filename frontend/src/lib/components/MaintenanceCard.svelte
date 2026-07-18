@@ -44,13 +44,10 @@
 
 <style>
   .card {
-    background:
-      linear-gradient(180deg, rgba(214, 228, 255, 0.025), transparent 45%),
-      var(--bg-panel);
+    background: var(--bg-panel);
     border: 1px solid var(--stroke);
     border-radius: var(--r-card);
     padding: 4px 16px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
   }
   .line {
     display: flex;

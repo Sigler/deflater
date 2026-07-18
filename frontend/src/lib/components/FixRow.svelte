@@ -114,20 +114,15 @@
 </div>
 
 <style>
+  /* Rows sit flat; the toggles are the only puffy thing on the page. */
   .row {
-    background:
-      linear-gradient(180deg, rgba(214, 228, 255, 0.03), transparent 45%),
-      var(--bg-card);
+    background: var(--bg-card);
     border: 1px solid var(--stroke);
     border-radius: var(--r-card);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
-    transition:
-      border-color 0.12s ease,
-      box-shadow 0.12s ease;
+    transition: border-color 0.12s ease;
   }
   .row:hover {
     border-color: var(--stroke-strong);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
   }
   .main {
     display: flex;

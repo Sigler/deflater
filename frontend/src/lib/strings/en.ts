@@ -18,7 +18,7 @@ export const en = {
     name: "Deflater",
     tagline: "Let the air out of Windows 11.",
     assurance:
-      "Deflater never touches Defender, Secure Boot, TPM, or anything Xbox or Game Pass. Games with anti-cheat see a completely stock system.",
+      "Deflater never touches Defender, Secure Boot, TPM, or anything Xbox or Game Pass.",
     assuranceShort: "Anti-cheat safe, always.",
     elevated: "Administrator",
     notElevated: "Standard user",

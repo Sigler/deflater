@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.svg" width="96" alt="The Deflater mark: a four-pane window with one pane deflated" />
+  <img src="assets/mascot.png" width="440" alt="Four worn blue vinyl cushions arranged like the Windows logo, one deflated, wrapped in a red DEFLATED: ANTI-BLOAT ENFORCEMENT banner" />
 </p>
 
 <h1 align="center">Deflater</h1>

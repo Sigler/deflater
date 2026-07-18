@@ -1,5 +1,6 @@
 <script lang="ts">
   import { SvelteSet } from "svelte/reactivity";
+  import mascot from "./assets/mascot-512.png";
   import { api } from "./lib/api";
   import { computeChanges, initialSelection } from "./lib/changes";
   import { S } from "./lib/i18n";
@@ -135,6 +136,7 @@
 
 {#if report === null}
   <div class="loading">
+    <img class="loading-mascot" src={mascot} alt="" draggable="false" />
     <div class="spinner" aria-hidden="true"></div>
     <p>{S.app.loading}</p>
     <p class="hint">{S.app.loadingHint}</p>
@@ -143,7 +145,6 @@
   <div class="page">
     <main>
       <Header elevated={report.elevated} inPlace={inPlaceCount} total={report.fixes.length} />
-
       <AlertsBanner alerts={report.alerts} onremove={removeAlertPackage} ondismiss={dismissAlerts} />
 
       {#if doneMessage}
@@ -227,8 +228,17 @@
     display: grid;
     place-content: center;
     justify-items: center;
-    gap: 10px;
+    gap: 12px;
     color: var(--text-dim);
+  }
+  .loading-mascot {
+    width: 280px;
+    height: 280px;
+    border-radius: 14px;
+    border: 1px solid var(--stroke-strong);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    margin-bottom: 8px;
+    user-select: none;
   }
   .loading .hint {
     font-size: 12px;
