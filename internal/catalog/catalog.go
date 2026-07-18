@@ -85,9 +85,11 @@ const (
 
 // refreshOverride names the fixes whose refresh need differs from the
 // per-Kind default. Kept as a map so the catalog entries stay terse.
-//   - The shell-surface switches only need an Explorer restart, not a
-//     full sign-out (websearch-off's SearchHost dependency is covered by
-//     restarting Explorer).
+//   - The shell-surface switches only need a shell restart, not a full
+//     sign-out. RestartExplorer restarts explorer.exe AND SearchHost.exe
+//     (the search box, for websearch-off / search-highlights) and
+//     StartMenuExperienceHost.exe (Start recommendations, for
+//     settings-suggestions), which is what actually re-reads these.
 //   - recall-purge removes a component and needs a reboot to complete.
 var refreshOverride = map[string]Refresh{
 	"websearch-off":        RefreshExplorer,

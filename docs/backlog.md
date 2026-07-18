@@ -2,6 +2,42 @@
 
 Notes captured during testing. Not yet actioned — just tracked.
 
+## Pre-v0.1.2 review findings deferred (accepted, not blockers)
+
+From the 5-agent antagonistic review before the v0.1.2 cut. The real
+bugs (watcher upgrade regression, refreshReport race, RestartExplorer
+under-coverage) were fixed; these were judged low-risk and left:
+
+- **Per-user fixes under over-the-shoulder UAC.** When a standard user
+  elevates by typing a *different* admin account's credentials, the
+  elevated GUI runs as that admin, so every HKCU / per-user path
+  (`LOCALAPPDATA`, HKCU switches, OneDrive detection + uninstall) reads
+  the admin's profile, not the signed-in user's. Status can be wrong and
+  a per-user uninstall a no-op. Pre-existing and app-wide (not specific to
+  the OneDrive split). Fix would need to run per-user actions as the
+  interactive user. Common case (user is their own admin) is unaffected.
+- **schtasks via PowerShell string interpolation.** `RemoveForeign` /
+  `taskExists` build the command with `fmt.Sprintf("... %s ...")`. Safe
+  today because the vetted allowlist holds only clean literals, but prefer
+  `exec.Command("schtasks.exe", "/Delete", "/F", "/TN", canon)` (argv) to
+  kill the class. Left as-is to avoid an untested change to a
+  security-sensitive path right before release.
+- **`Pending.Token` is stored but never validated** (pre-existing in
+  SaveAndElevate, now also in StageTaskRemovalAndElevate). Either validate
+  it against something the relaunched process is passed, or drop it and
+  its comment.
+- **Transient `schtasks /Query` failure** makes `RemoveForeign` a silent
+  no-op reported as success; self-heals (the banner re-appears on the next
+  report). Distinguish "query failed" from "task absent" to be exact.
+- **winver labels Server 2022 as "Windows 10 Server"** (build 20348 <
+  22000). Non-target platform; `Home=false` stays correct.
+- **`recall.Detect` has no size cap / cancellation**; runs off the UI
+  thread (fire-and-forget), so it never blocks rendering.
+- **OneDrive File Explorer sidebar node** lingers until an Explorer
+  restart after `onedrive-uninstall` (refresh=none); cosmetic.
+- **Search can render a group child as the primary row** (unstyled) when
+  the query matches only the child; cosmetic, only during search.
+
 ## Behavior & consistency
 
 - **OneDrive has no Reinstall button** unlike other app removals. Reason:

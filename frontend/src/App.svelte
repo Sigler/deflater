@@ -117,6 +117,11 @@
 
   const resultCount = $derived(report?.fixes.filter(matchesQuery).length ?? 0);
 
+  // Monotonic token: any load/apply bumps it, so a slow background
+  // refresh that started earlier knows to discard its stale result
+  // instead of clobbering fresher state.
+  let loadGen = 0;
+
   // Re-read the machine so the UI reflects reality when something changed
   // behind our back: an app reinstalled from the Store, or a setting
   // flipped by another tool. Runs on window focus and a gentle heartbeat.
@@ -125,9 +130,13 @@
   // we only refresh statuses and leave their selection untouched.
   async function refreshReport() {
     if (!report || applying) return;
+    const gen = ++loadGen;
     const atRest = changeCount === 0;
     try {
       const r = await api.getReport();
+      // A load or apply happened while we were reading, or an apply is now
+      // running: our snapshot is stale, so drop it rather than overwrite.
+      if (applying || gen !== loadGen) return;
       report = r;
       if (atRest) selection = new SvelteSet(initialSelection(r.fixes, r.managed));
     } catch {
@@ -144,6 +153,7 @@
 
   async function load() {
     loadError = "";
+    loadGen++;
     try {
       const r = await api.getReport();
       report = r;
@@ -200,6 +210,7 @@
 
   async function runApply(enable: string[], disable: string[]) {
     applying = true;
+    loadGen++;
     try {
       const outcome = await api.apply(enable, disable);
       if (outcome.needsElevation) {
@@ -331,7 +342,7 @@
   void load();
 </script>
 
-<svelte:window onfocus={refreshReport} />
+<svelte:window onfocus={refreshReport} onresize={updateActive} />
 
 {#if report === null}
   <div class="loading">

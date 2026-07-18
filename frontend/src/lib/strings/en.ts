@@ -144,7 +144,7 @@ export const en = {
     resuming: "Continuing your changes…",
     doneClean: "All changes applied.",
     refreshNone: "Everything is live now.",
-    refreshExplorer: "One change needs an Explorer restart to show, which flickers the taskbar for a second.",
+    refreshExplorer: "One change needs the shell restarted to show, which flickers the taskbar, Start, and Search for a second.",
     refreshSignout: "A few changes finish after you sign out and back in.",
     refreshReboot: "A few changes finish after you restart your PC.",
     restartExplorer: "Restart Explorer now",

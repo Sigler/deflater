@@ -6,7 +6,9 @@ package update
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -32,6 +34,9 @@ type Info struct {
 // Info{Available:false} with the releases page as the URL, so update
 // awareness can never disrupt the app or block startup.
 func Check(current string) Info {
+	// Strip a leading "v" symmetrically with the tag name below, so a
+	// future appVersion of "v0.2.0" can't read as major 0 and nag.
+	current = strings.TrimPrefix(strings.TrimSpace(current), "v")
 	info := Info{Current: current, URL: ReleasesPage}
 
 	client := &http.Client{Timeout: 5 * time.Second}
@@ -55,16 +60,25 @@ func Check(current string) Info {
 		TagName string `json:"tag_name"`
 		HTMLURL string `json:"html_url"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+	// Cap the body: a hostile or broken endpoint shouldn't be able to make
+	// us allocate unboundedly. A release JSON is a few KB.
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&payload); err != nil {
 		return info
 	}
 
 	info.Latest = strings.TrimPrefix(strings.TrimSpace(payload.TagName), "v")
-	if payload.HTMLURL != "" {
+	// The link is opened via the OS shell, so only trust an https github.com
+	// URL from the response; otherwise fall back to the hardcoded page.
+	if u, err := url.Parse(payload.HTMLURL); err == nil && u.Scheme == "https" && isGitHubHost(u.Host) {
 		info.URL = payload.HTMLURL
 	}
 	info.Available = newer(info.Latest, current)
 	return info
+}
+
+// isGitHubHost reports whether host is github.com or a subdomain of it.
+func isGitHubHost(host string) bool {
+	return host == "github.com" || strings.HasSuffix(host, ".github.com")
 }
 
 // newer reports whether version a is strictly greater than b, comparing

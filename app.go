@@ -54,6 +54,28 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	_ = toast.Register("")
 	logging.Logf("app: started (elevated=%v)", elevate.IsElevated())
+	a.retireWatcher()
+}
+
+// retireWatcher neutralizes the silent-install watcher, which was pulled
+// from the UI (tracked in GitHub issue #2). An upgrader may still have
+// WatcherEnabled=true persisted from an older build, which would keep the
+// headless maintenance task firing "an app installed itself" toasts the
+// UI can no longer show, dismiss, or turn off. Force it off and drop any
+// orphaned alerts. Reads first so it only writes when something changes.
+func (a *App) retireWatcher() {
+	cfg := config.Load()
+	if !cfg.WatcherEnabled && len(cfg.Alerts) == 0 {
+		return
+	}
+	logging.Logf("watcher: retiring (was enabled=%v, alerts=%d)", cfg.WatcherEnabled, len(cfg.Alerts))
+	if err := config.Update(func(c *config.Config) error {
+		c.WatcherEnabled = false
+		c.Alerts = nil
+		return nil
+	}); err != nil {
+		logging.Logf("watcher: retire failed: %v", err)
+	}
 }
 
 // RegOpInfo mirrors reg.Op for the frontend, so the generated bindings
@@ -133,8 +155,11 @@ func (a *App) GetReport() (Report, error) {
 	if r.Alerts == nil {
 		r.Alerts = []config.Alert{}
 	}
-	wantTask := cfg.Maintenance || cfg.WatcherEnabled
-	r.TaskMismatch = wantTask != schtask.IsInstalled()
+	// The watcher no longer drives the task (retired; issue #2), so only
+	// maintenance wants it. Flag a mismatch only in the actionable
+	// direction — wanted but missing — so an orphaned task from an older
+	// build doesn't nag; the next apply's syncTask removes it silently.
+	r.TaskMismatch = cfg.Maintenance && !schtask.IsInstalled()
 	r.ConflictingTasks = schtask.DetectForeign()
 	for _, f := range catalog.Fixes() {
 		status, err := a.eng.Status(f)
@@ -357,7 +382,8 @@ func (a *App) TakePending() (*config.Pending, error) {
 		return nil
 	})
 	if p != nil {
-		logging.Logf("pending: resuming saved apply (%d enable, %d disable)", len(p.Enable), len(p.Disable))
+		logging.Logf("pending: resuming (%d enable, %d disable, %d task removals)",
+			len(p.Enable), len(p.Disable), len(p.RemoveTasks))
 	}
 	return p, err
 }
@@ -474,12 +500,13 @@ func (a *App) setFlag(on bool, set func(*config.Config, bool)) (ToggleResult, er
 }
 
 // syncTask makes the real scheduled task match the config: it exists
-// while either maintenance or the watcher wants it, and is removed when
-// both are off. Must be called elevated. On install it first copies the
-// exe to an admin-only per-machine location so the auto-elevating task
-// cannot be pointed at a user-writable binary.
+// while maintenance wants it, and is removed otherwise (the watcher is
+// retired and no longer keeps it alive; issue #2). Must be called
+// elevated. On install it first copies the exe to an admin-only
+// per-machine location so the auto-elevating task cannot be pointed at a
+// user-writable binary.
 func (a *App) syncTask(cfg *config.Config) error {
-	if cfg.Maintenance || cfg.WatcherEnabled {
+	if cfg.Maintenance {
 		exePath, err := installSelf()
 		if err == nil {
 			err = schtask.Install(exePath)
@@ -536,18 +563,24 @@ func (a *App) beforeClose(ctx context.Context) bool {
 	return choice != "Yes"
 }
 
-// RestartExplorer restarts the Windows shell so fixes that only need an
-// Explorer refresh (taskbar, Start, Search, File Explorer) take effect
-// without a sign-out. It causes a brief flicker, so the UI warns first.
-// Runs as the current user; no elevation needed.
+// RestartExplorer restarts the Windows shell surfaces so fixes that only
+// need a shell refresh take effect without a sign-out. It restarts not
+// just explorer.exe (taskbar, File Explorer) but also SearchHost.exe (the
+// search box, for websearch-off / search-highlights) and
+// StartMenuExperienceHost.exe (Start recommendations, for
+// settings-suggestions) — those are separate processes that survive an
+// Explorer restart, so killing only explorer would leave those changes
+// invisible until sign-out. All three respawn on their own; explorer gets
+// a fallback start. Causes a brief flicker, so the UI warns first. Runs as
+// the current user; no elevation needed.
 func (a *App) RestartExplorer() error {
 	_, err := psrun.Run(
-		`Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue; `+
+		`Stop-Process -Name explorer,SearchHost,StartMenuExperienceHost -Force -ErrorAction SilentlyContinue; `+
 			`Start-Sleep -Milliseconds 400; `+
 			`if (-not (Get-Process -Name explorer -ErrorAction SilentlyContinue)) { Start-Process explorer.exe }`,
 		30*time.Second)
 	if err != nil {
-		logging.Logf("refresh: restart explorer failed: %v", err)
+		logging.Logf("refresh: restart shell failed: %v", err)
 	}
 	return err
 }

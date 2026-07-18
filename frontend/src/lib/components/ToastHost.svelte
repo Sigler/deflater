@@ -1,7 +1,7 @@
 <script lang="ts">
   import { fly } from "svelte/transition";
   import { S } from "../i18n";
-  import { dismissToast, type Toast, toasts } from "../toasts.svelte";
+  import { dismissToast, pushToast, type Toast, toasts } from "../toasts.svelte";
 
   let busy = $state<number | null>(null);
 
@@ -10,9 +10,12 @@
     busy = t.id;
     try {
       await t.action.run();
+      dismissToast(t.id);
+    } catch (e) {
+      // Don't dismiss as if it worked; tell the user it failed.
+      pushToast({ kind: "warn", message: `${e}`, sticky: true });
     } finally {
       busy = null;
-      dismissToast(t.id);
     }
   }
 </script>

@@ -26,3 +26,18 @@ func TestNewerComparesNumerically(t *testing.T) {
 		}
 	}
 }
+
+func TestIsGitHubHost(t *testing.T) {
+	good := []string{"github.com", "www.github.com", "api.github.com"}
+	bad := []string{"", "evil.com", "github.com.evil.com", "notgithub.com", "githubxcom"}
+	for _, h := range good {
+		if !isGitHubHost(h) {
+			t.Errorf("isGitHubHost(%q) = false, want true", h)
+		}
+	}
+	for _, h := range bad {
+		if isGitHubHost(h) {
+			t.Errorf("isGitHubHost(%q) = true, want false", h)
+		}
+	}
+}
