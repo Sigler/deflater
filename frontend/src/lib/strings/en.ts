@@ -133,7 +133,7 @@ export const en = {
     applyError: "Something went wrong applying your changes:",
     elevateTitle: "Windows will ask for permission",
     elevateBody:
-      "These changes need administrator rights. Deflater will reopen with the standard Windows prompt, then continue right where you left off.",
+      "Changing these settings needs administrator rights, and Windows only grants those to a program as it starts. So Deflater has to close and reopen once, which is why you'll see Windows' blue User Account Control (UAC) box asking you to allow it. Say yes, and Deflater picks up exactly where you left off.",
     elevateConfirm: "Continue",
     elevateCancel: "Not now",
     resuming: "Continuing your changes…",
@@ -142,7 +142,7 @@ export const en = {
   maintenance: {
     sectionBlurb: "Keep your choices applied, and get warned when apps sneak in.",
     mismatch:
-      "Automatic maintenance is set to on, but its scheduled task isn't registered. Apply any change while allowing the Windows permission prompt to set it up.",
+      "Automatic maintenance is set to on, but its scheduled task isn't registered. Apply any change and allow the User Account Control (UAC) prompt to set it up.",
     title: "Keep it fixed automatically",
     body: "Windows updates love to bring junk back. Deflater can quietly re-check after every sign-in and once a week, and re-apply your choices when something drifts.",
     on: "On",
@@ -226,8 +226,8 @@ export const en = {
     },
     "device-metadata-off": {
       title: "Block manufacturer auto-installs",
-      summary: "Stops hardware makers auto-installing their apps when you plug things in.",
-      what: "Turns off automatic download of manufacturers' apps and custom icons for devices, the switch behind recent cases like LG software arriving on its own. Set both as the official policy and in the Settings screen, so the UI reflects it. Driver installation through Windows Update is not affected.",
+      summary: "Blocks Windows from auto-downloading hardware makers' companion apps.",
+      what: "Turns off Windows' automatic download of device metadata and the manufacturer apps that ride along with it. This is the documented switch for that behavior, the kind reported in recent cases like LG's monitor app installing itself. Deflater sets it both ways, as the official policy and the Settings-screen value, so it applies on Home and Pro alike. Driver installation through Windows Update is not affected.",
       tradeoff:
         "If a gadget needs a companion app, you install it yourself from the maker's site or the Store.",
       undo: "Flip the toggle off and apply.",

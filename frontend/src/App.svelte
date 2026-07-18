@@ -389,6 +389,8 @@
     scroll-margin-top: 96px;
     display: grid;
     gap: 10px;
+    /* Same crate separation as the category sections. */
+    margin-top: 18px;
   }
   /* Matches the category section headers in CategorySection.svelte. */
   .secheader {

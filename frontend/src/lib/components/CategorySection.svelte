@@ -49,6 +49,13 @@
     display: grid;
     gap: 10px;
     scroll-margin-top: 96px;
+    /* Extra air between crates so sections read as distinct blocks.
+       Adds to the parent grid gap; the tight 8-10px internal gaps stay. */
+    margin-top: 18px;
+  }
+  /* The first section sits right under the sticky bar; no double gap. */
+  section:first-of-type {
+    margin-top: 4px;
   }
   header {
     display: flex;
