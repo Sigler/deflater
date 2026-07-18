@@ -6,6 +6,10 @@ export function Apply(arg1, arg2) {
   return window['go']['main']['App']['Apply'](arg1, arg2);
 }
 
+export function CheckUpdate() {
+  return window['go']['main']['App']['CheckUpdate']();
+}
+
 export function DismissAlerts() {
   return window['go']['main']['App']['DismissAlerts']();
 }
@@ -18,8 +22,24 @@ export function OpenLogFolder() {
   return window['go']['main']['App']['OpenLogFolder']();
 }
 
+export function OpenRecallFolder() {
+  return window['go']['main']['App']['OpenRecallFolder']();
+}
+
+export function RecallSnapshots() {
+  return window['go']['main']['App']['RecallSnapshots']();
+}
+
+export function RemoveConflictingTasks(arg1) {
+  return window['go']['main']['App']['RemoveConflictingTasks'](arg1);
+}
+
 export function RemovePackage(arg1) {
   return window['go']['main']['App']['RemovePackage'](arg1);
+}
+
+export function RestartExplorer() {
+  return window['go']['main']['App']['RestartExplorer']();
 }
 
 export function SaveAndElevate(arg1, arg2) {
@@ -36,6 +56,10 @@ export function SetMaintenance(arg1) {
 
 export function SetWatcher(arg1) {
   return window['go']['main']['App']['SetWatcher'](arg1);
+}
+
+export function StageTaskRemovalAndElevate(arg1) {
+  return window['go']['main']['App']['StageTaskRemovalAndElevate'](arg1);
 }
 
 export function TakePending() {

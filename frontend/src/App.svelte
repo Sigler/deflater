@@ -4,15 +4,24 @@
   import { api } from "./lib/api";
   import { computeChanges, initialSelection } from "./lib/changes";
   import { S } from "./lib/i18n";
-  import AlertsBanner from "./lib/components/AlertsBanner.svelte";
   import ApplyBar from "./lib/components/ApplyBar.svelte";
   import CategoryNav from "./lib/components/CategoryNav.svelte";
+  import ConflictBanner from "./lib/components/ConflictBanner.svelte";
   import CategorySection from "./lib/components/CategorySection.svelte";
   import Header from "./lib/components/Header.svelte";
   import MaintenanceCard from "./lib/components/MaintenanceCard.svelte";
   import Modal from "./lib/components/Modal.svelte";
-  import ScanBar from "./lib/components/ScanBar.svelte";
-  import type { FixResult, Report } from "./lib/types";
+  import RecallBanner from "./lib/components/RecallBanner.svelte";
+  import ToastHost from "./lib/components/ToastHost.svelte";
+  import { clearToasts, pushToast } from "./lib/toasts.svelte";
+  import type {
+    FixResult,
+    FixState,
+    RecallInfo,
+    Refresh,
+    Report,
+    UpdateInfo,
+  } from "./lib/types";
 
   let report = $state<Report | null>(null);
   let loadError = $state("");
@@ -20,11 +29,12 @@
   let applying = $state(false);
   let progressText = $state("");
   let showElevateModal = $state(false);
-  let doneMessage = $state("");
-  let doneWarn = $state(false);
-  let failures = $state<FixResult[]>([]);
   let maintenancePendingElevation = $state(false);
-  let watcherPendingElevation = $state(false);
+  let update = $state<UpdateInfo | null>(null);
+  let recallInfo = $state<RecallInfo | null>(null);
+  let query = $state("");
+
+  const filtering = $derived(query.trim().length > 0);
 
   const changes = $derived(
     report ? computeChanges(report.fixes, selection) : { enable: [], disable: [] },
@@ -44,7 +54,11 @@
   // Section navigation: sidenav when wide, tabs when narrow, scrollspy
   // highlighting whichever section is under the sticky bars.
   let scroller = $state<HTMLDivElement | null>(null);
+  let stickyEl = $state<HTMLDivElement | null>(null);
   let activeSection = $state("");
+  // True once the search bar has scrolled up and pinned to the top; only
+  // then does the small brand appear beside the search.
+  let stuck = $state(false);
 
   const navItems = $derived(
     report
@@ -59,7 +73,12 @@
   );
 
   function updateActive() {
-    if (!scroller || navItems.length === 0) return;
+    if (!scroller) return;
+    // The bar is "stuck" when its top has reached the scroller's top.
+    if (stickyEl) {
+      stuck = stickyEl.getBoundingClientRect().top <= scroller.getBoundingClientRect().top + 0.5;
+    }
+    if (navItems.length === 0) return;
     const y = scroller.scrollTop + 150;
     let current = navItems[0].id;
     for (const item of navItems) {
@@ -84,22 +103,96 @@
     if (report) updateActive();
   });
 
-  function byCategory(cat: string) {
-    return report?.fixes.filter((f) => f.category === cat) ?? [];
+  function matchesQuery(f: FixState): boolean {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    const s = S.fixes[f.id as keyof typeof S.fixes];
+    const hay = [s?.title, s?.summary, s?.what, f.id].filter(Boolean).join(" ").toLowerCase();
+    return hay.includes(q);
   }
+
+  function byCategory(cat: string) {
+    return report?.fixes.filter((f) => f.category === cat && matchesQuery(f)) ?? [];
+  }
+
+  const resultCount = $derived(report?.fixes.filter(matchesQuery).length ?? 0);
+
+  // Monotonic token: any load/apply bumps it, so a slow background
+  // refresh that started earlier knows to discard its stale result
+  // instead of clobbering fresher state.
+  let loadGen = 0;
+
+  // Re-read the machine so the UI reflects reality when something changed
+  // behind our back: an app reinstalled from the Store, or a setting
+  // flipped by another tool. Runs on window focus and a gentle heartbeat.
+  // When the user has no pending edits we re-derive the selection too, so
+  // drift in a managed fix shows up as a ready-to-apply change; mid-edit
+  // we only refresh statuses and leave their selection untouched.
+  async function refreshReport() {
+    if (!report || applying) return;
+    const gen = ++loadGen;
+    const atRest = changeCount === 0;
+    try {
+      const r = await api.getReport();
+      // A load or apply happened while we were reading, or an apply is now
+      // running: our snapshot is stale, so drop it rather than overwrite.
+      if (applying || gen !== loadGen) return;
+      report = r;
+      if (atRest) selection = new SvelteSet(initialSelection(r.fixes, r.managed));
+    } catch {
+      // Transient read failure; the next tick tries again.
+    }
+  }
+
+  $effect(() => {
+    const id = setInterval(() => {
+      if (document.visibilityState === "visible") void refreshReport();
+    }, 45000);
+    return () => clearInterval(id);
+  });
 
   async function load() {
     loadError = "";
+    loadGen++;
     try {
       const r = await api.getReport();
       report = r;
       selection = new SvelteSet(initialSelection(r.fixes, r.managed));
+      // Fire-and-forget update check: never blocks the UI, and any
+      // failure (offline, rate-limited) just leaves the note hidden.
+      void api
+        .checkUpdate()
+        .then((u) => {
+          if (u.available) update = u;
+        })
+        .catch(() => {});
+      // Recall snapshot scan can touch many files; run it in the
+      // background and surface the privacy signal when it's done.
+      void api
+        .recallSnapshots()
+        .then((r) => {
+          if (r.present) recallInfo = r;
+        })
+        .catch(() => {});
       // If we were relaunched elevated to finish a staged apply, claim it
       // (consume-on-read, so it can never fire twice) and run it.
       const pending = await api.takePending();
       if (pending) {
-        progressText = S.apply.resuming;
-        await runApply(pending.enable, pending.disable);
+        if (pending.enable.length || pending.disable.length) {
+          progressText = S.apply.resuming;
+          await runApply(pending.enable, pending.disable);
+        }
+        // A staged foreign-task removal completes here, now that we are
+        // elevated. Refresh so the removed task drops off the banner.
+        if (pending.removeTasks?.length) {
+          try {
+            await api.removeConflictingTasks(pending.removeTasks);
+            report = await api.getReport();
+            pushToast({ kind: "success", message: S.conflicts.removed });
+          } catch (e) {
+            pushToast({ kind: "warn", message: `${e}`, sticky: true });
+          }
+        }
       }
     } catch (e) {
       loadError = `${e}`;
@@ -117,9 +210,7 @@
 
   async function runApply(enable: string[], disable: string[]) {
     applying = true;
-    doneMessage = "";
-    doneWarn = false;
-    failures = [];
+    loadGen++;
     try {
       const outcome = await api.apply(enable, disable);
       if (outcome.needsElevation) {
@@ -127,14 +218,6 @@
         return;
       }
       const failed = (outcome.results ?? []).filter((r) => !r.ok);
-      failures = failed;
-      if (outcome.saveWarning) {
-        doneWarn = true;
-        doneMessage = S.apply.saveWarning;
-      } else {
-        doneWarn = failed.length > 0;
-        doneMessage = failed.length > 0 ? S.apply.doneSomeFailed(failed.length) : S.apply.doneBody;
-      }
       const r = await api.getReport();
       report = r;
       // Reflect reality, but keep failed enables selected so the user can
@@ -143,14 +226,59 @@
       for (const f of failed) if (enable.includes(f.id)) next.add(f.id);
       selection = new SvelteSet(next);
       maintenancePendingElevation = false;
-      watcherPendingElevation = false;
+      announceApply(outcome.saveWarning ?? "", failed, r.maintenance, outcome.refresh ?? "signout");
     } catch (e) {
-      doneWarn = true;
-      doneMessage = `${S.apply.applyError} ${e}`;
+      pushToast({ kind: "warn", message: S.apply.applyError, detail: [`${e}`], sticky: true });
     } finally {
       applying = false;
       progressText = "";
     }
+  }
+
+  // Turn an apply outcome into the right toast: a sticky warning when
+  // something failed or couldn't be recorded, otherwise a quick success
+  // note (with the maintenance nudge only when maintenance is still off).
+  function announceApply(
+    saveWarning: string,
+    failed: FixResult[],
+    maintenance: boolean,
+    outcomeRefresh: Refresh,
+  ) {
+    if (saveWarning) {
+      pushToast({ kind: "warn", message: S.apply.saveWarning, sticky: true });
+      return;
+    }
+    if (failed.length > 0) {
+      pushToast({
+        kind: "warn",
+        message: S.apply.doneSomeFailed(failed.length),
+        detail: failed.map(
+          (f) => `${S.fixes[f.id as keyof typeof S.fixes]?.title ?? f.id}: ${f.error}`,
+        ),
+        sticky: true,
+      });
+      return;
+    }
+    // Success: tell the user the single lightest action that makes
+    // everything they applied take effect, and offer to do it when that's
+    // just an Explorer restart.
+    const refresh = outcomeRefresh;
+    const detail: string[] = [];
+    let action: { label: string; busyLabel: string; run: () => Promise<void> } | undefined;
+    if (refresh === "none") detail.push(S.apply.refreshNone);
+    else if (refresh === "reboot") detail.push(S.apply.refreshReboot);
+    else if (refresh === "explorer") {
+      detail.push(S.apply.refreshExplorer);
+      action = {
+        label: S.apply.restartExplorer,
+        busyLabel: S.apply.restartingExplorer,
+        run: () => api.restartExplorer(),
+      };
+    } else detail.push(S.apply.refreshSignout);
+    if (!maintenance) detail.push(S.apply.doneMaintenanceTip);
+    // An Explorer restart can't auto-dismiss (the click drives it), so
+    // keep that toast sticky; otherwise let it fade.
+    pushToast({ kind: "success", message: S.apply.doneClean, detail, action, sticky: !!action });
   }
 
   function apply() {
@@ -176,14 +304,12 @@
 
   function reset() {
     if (report) selection = new SvelteSet(initialSelection(report.fixes, report.managed));
-    doneMessage = "";
-    failures = [];
+    clearToasts();
   }
 
   function toggleFix(id: string, value: boolean) {
     if (value) selection.add(id);
     else selection.delete(id);
-    doneMessage = "";
   }
 
   async function setMaintenance(on: boolean) {
@@ -195,37 +321,28 @@
     } catch (e) {
       report.maintenance = !on; // roll the toggle back to reality
       maintenancePendingElevation = false;
-      doneWarn = true;
-      doneMessage = `${e}`;
+      pushToast({ kind: "warn", message: `${e}`, sticky: true });
     }
   }
 
-  async function setWatcher(on: boolean) {
+  async function removeConflictingTask(name: string) {
     if (!report) return;
-    report.watcher = on;
-    try {
-      const res = await api.setWatcher(on);
-      watcherPendingElevation = res.needsElevation;
-    } catch (e) {
-      report.watcher = !on;
-      watcherPendingElevation = false;
-      doneWarn = true;
-      doneMessage = `${e}`;
+    // Deleting a task that runs as admin needs elevation. If we already
+    // have it, do it now; otherwise stage it and relaunch (this window
+    // closes, then resumes elevated and finishes the removal on load).
+    if (report.elevated) {
+      await api.removeConflictingTasks([name]);
+      report = await api.getReport();
+      pushToast({ kind: "success", message: S.conflicts.removed });
+    } else {
+      await api.stageTaskRemovalAndElevate(name);
     }
-  }
-
-  async function removeAlertPackage(pkg: string) {
-    await api.removePackage(pkg);
-    if (report) report.alerts = report.alerts.filter((a) => a.package !== pkg);
-  }
-
-  async function dismissAlerts() {
-    await api.dismissAlerts();
-    if (report) report.alerts = [];
   }
 
   void load();
 </script>
+
+<svelte:window onfocus={refreshReport} onresize={updateActive} />
 
 {#if report === null}
   <div class="loading">
@@ -247,36 +364,43 @@
         <CategoryNav items={navItems} active={activeSection} variant="side" onjump={jump} />
       </aside>
       <main>
-        <Header />
-        <AlertsBanner
-          alerts={report.alerts}
-          onremove={removeAlertPackage}
-          ondismiss={dismissAlerts}
-        />
-
-        {#if report.taskMismatch}
-          <div class="done warn">
-            <p>{S.maintenance.mismatch}</p>
-          </div>
+        <Header applied={inPlaceCount} total={report.fixes.length} />
+        <ConflictBanner tasks={report.conflictingTasks} onremove={removeConflictingTask} />
+        {#if recallInfo}
+          <RecallBanner info={recallInfo} onopen={() => api.openRecallFolder()} />
         {/if}
 
-        {#if doneMessage}
-          <div class="done" class:warn={doneWarn}>
-            <p>{doneMessage}</p>
-            {#each failures as f (f.id)}
-              <p class="fail">{S.fixes[f.id as keyof typeof S.fixes]?.title ?? f.id}: {f.error}</p>
-            {/each}
-            {#if !doneWarn && failures.length === 0 && !report.maintenance}
-              <p class="tip">{S.apply.doneMaintenanceTip}</p>
+        <div class="stickytop" bind:this={stickyEl}>
+          <div class="stickyrow">
+            {#if stuck}
+              <div class="brand">
+                <img src={mascot} alt="" draggable="false" />
+                <span>{S.app.name}</span>
+              </div>
             {/if}
+            <div class="search">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
+                <path d="M16.5 16.5 L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+              <input
+                type="search"
+                placeholder={S.search.placeholder}
+                aria-label={S.search.placeholder}
+                bind:value={query}
+              />
+              {#if filtering}
+                <button type="button" class="clear" aria-label={S.search.clear} onclick={() => (query = "")}>
+                  ×
+                </button>
+              {/if}
+            </div>
           </div>
-        {/if}
-
-        <div class="stickytop">
-          <ScanBar inPlace={inPlaceCount} total={report.fixes.length} />
-          <div class="tabsrow">
-            <CategoryNav items={navItems} active={activeSection} variant="tabs" onjump={jump} />
-          </div>
+          {#if !filtering}
+            <div class="tabsrow">
+              <CategoryNav items={navItems} active={activeSection} variant="tabs" onjump={jump} />
+            </div>
+          {/if}
         </div>
 
         {#each report.categories as cat (cat)}
@@ -290,27 +414,42 @@
           />
         {/each}
 
+        {#if filtering && resultCount === 0}
+          <p class="noresults">{S.search.noResults(query.trim())}</p>
+        {/if}
+
+        {#if !filtering}
         <div class="anchor" id="sec-maintenance">
           <div class="secheader">
             <h2>{S.nav.maintenance}</h2>
             <p>{S.maintenance.sectionBlurb}</p>
           </div>
+          {#if report.taskMismatch}
+            <div class="done warn"><p>{S.maintenance.mismatch}</p></div>
+          {/if}
           <MaintenanceCard
             maintenance={report.maintenance}
-            watcher={report.watcher}
             maintenancePending={maintenancePendingElevation}
-            watcherPending={watcherPendingElevation}
             onmaintenance={setMaintenance}
-            onwatcher={setWatcher}
           />
         </div>
+        {/if}
 
         <footer>
           <button type="button" class="link" onclick={() => api.openLogFolder()}>
             {S.footer.logs}
           </button>
           <span>{S.footer.assurance}</span>
-          <span class="stamp">{S.footer.version(report.version)}</span>
+          <span class="stamp meta nowrap">
+            {report.edition}
+            {#if update}
+              · <button type="button" class="update" onclick={() => update && api.openUrl(update.url)}>
+                {S.footer.updateAvailable(update.latest)}
+              </button>
+            {:else}
+              · {S.footer.version(report.version)}
+            {/if}
+          </span>
         </footer>
       </main>
     </div>
@@ -334,6 +473,8 @@
     {/snippet}
   </Modal>
 {/if}
+
+<ToastHost />
 
 <style>
   .page {
@@ -388,10 +529,81 @@
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--stroke);
   }
+  .stickyrow {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 9px 2px;
+  }
+  /* Minimal branding that rides along in the sticky bar once the full
+     masthead scrolls away. */
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+  }
+  .brand img {
+    width: 26px;
+    height: 26px;
+    user-select: none;
+  }
+  .brand span {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .search {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: var(--r-control);
+    background: var(--bg-card);
+    border: 1px solid var(--stroke-strong);
+    color: var(--text-faint);
+  }
+  .search:focus-within {
+    border-color: var(--coral);
+  }
+  .search svg {
+    flex: none;
+  }
+  .search input {
+    flex: 1;
+    min-width: 0;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+  }
+  .search input::placeholder {
+    color: var(--text-faint);
+  }
+  .clear {
+    flex: none;
+    font-size: 15px;
+    line-height: 1;
+    color: var(--text-faint);
+    padding: 0 2px;
+  }
+  .clear:hover {
+    color: var(--text);
+  }
+  .noresults {
+    padding: 8px 2px;
+    color: var(--text-dim);
+    font-size: 13px;
+  }
   .anchor {
     scroll-margin-top: 96px;
     display: grid;
     gap: 10px;
+    /* Same crate separation as the category sections. */
+    margin-top: 18px;
   }
   /* Matches the category section headers in CategorySection.svelte. */
   .secheader {
@@ -456,14 +668,6 @@
     background: var(--gold-soft);
     border-color: rgba(214, 164, 76, 0.35);
   }
-  .fail {
-    font-size: 12px;
-    color: var(--text-dim);
-  }
-  .tip {
-    font-size: 12px;
-    color: var(--text-dim);
-  }
   footer {
     display: flex;
     align-items: center;
@@ -485,6 +689,20 @@
     text-transform: uppercase;
     letter-spacing: 0.07em;
     font-size: 10.5px;
+  }
+  .nowrap {
+    white-space: nowrap;
+    flex: none;
+  }
+  .update {
+    font-size: 11px;
+    color: var(--coral-bright);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    white-space: nowrap;
+  }
+  .update:hover {
+    color: var(--coral);
   }
   .primary {
     padding: 8px 18px;

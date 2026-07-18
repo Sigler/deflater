@@ -32,8 +32,11 @@ type Alert struct {
 type Pending struct {
 	Enable  []string `json:"enable"`
 	Disable []string `json:"disable"`
-	Token   string   `json:"token"`
-	Created string   `json:"created"` // RFC 3339
+	// RemoveTasks are foreign scheduled tasks to delete once elevated
+	// (their removal needs admin). Carried across the same relaunch.
+	RemoveTasks []string `json:"removeTasks,omitempty"`
+	Token       string   `json:"token"`
+	Created     string   `json:"created"` // RFC 3339
 }
 
 // Expired reports whether a pending request is older than the window in
@@ -68,7 +71,10 @@ type Config struct {
 func path() string     { return filepath.Join(logging.Dir(), "config.json") }
 func lockPath() string { return filepath.Join(logging.Dir(), "config.json.lock") }
 
-func defaults() Config { return Config{WatcherEnabled: true} }
+// defaults: everything off. Nothing that needs a scheduled task is on
+// until the user turns it on, so a fresh install shows no task-mismatch
+// prompt and installs no background task uninvited.
+func defaults() Config { return Config{} }
 
 // Load reads the config, returning sensible defaults when absent. A
 // corrupt file is preserved (renamed aside) rather than silently

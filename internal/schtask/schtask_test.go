@@ -41,6 +41,28 @@ func TestTaskXMLEscapesSpecialCharacters(t *testing.T) {
 	}
 }
 
+func TestForeignTaskRecognition(t *testing.T) {
+	// The vetted list must recognize its own entries case-insensitively.
+	for _, ft := range knownForeign {
+		if !IsKnownForeign(ft.Name) {
+			t.Errorf("known task %q not recognized", ft.Name)
+		}
+		if !IsKnownForeign(strings.ToUpper(ft.Name)) {
+			t.Errorf("known task %q not recognized case-insensitively", ft.Name)
+		}
+	}
+	// Anything not on the list must be refused, so a caller can never
+	// drive removal of an arbitrary task.
+	for _, bad := range []string{"", "OneDrive Standalone Update Task", `\Microsoft\Windows\Foo`, "Deflater Maintenance"} {
+		if IsKnownForeign(bad) {
+			t.Errorf("unlisted task %q was recognized", bad)
+		}
+		if err := RemoveForeign(bad); err == nil {
+			t.Errorf("RemoveForeign(%q) should refuse an unrecognized task", bad)
+		}
+	}
+}
+
 func TestUTF16LEHasBOMAndLittleEndian(t *testing.T) {
 	b := utf16LE("ab")
 	want := []byte{0xFF, 0xFE, 'a', 0x00, 'b', 0x00}

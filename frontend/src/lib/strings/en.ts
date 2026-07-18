@@ -25,6 +25,12 @@ export const en = {
     retry: "Try again",
   },
 
+  search: {
+    placeholder: "Search settings",
+    clear: "Clear search",
+    noResults: (q: string) => `Nothing matches "${q}".`,
+  },
+
   profiles: {
     label: "Preset",
     custom: "Custom selection",
@@ -106,6 +112,7 @@ export const en = {
     undoApp: "Reinstall it from the Microsoft Store any time, free.",
     reinstall: "Reinstall",
     reinstallHint: "Opens the Microsoft Store",
+    reinstallWebHint: "Opens microsoft.com/onedrive",
     partialNote:
       "Part of this fix is already set on this PC, most likely by another tool or an older script. Applying it completes the rest.",
   },
@@ -125,24 +132,33 @@ export const en = {
     doneMaintenanceTip:
       "Tip: turn on 'Keep it fixed automatically' near the bottom, so a Windows update cannot quietly undo this.",
     doneSomeFailed: (n: number) =>
-      n === 1
-        ? "1 change did not apply. Details below."
-        : `${n} changes did not apply. Details below.`,
+      n === 1 ? "1 change didn't apply." : `${n} changes didn't apply.`,
     saveWarning:
       "Your changes were applied, but Deflater couldn't save a record of them. Maintenance may not track them. Details are in the logs.",
     applyError: "Something went wrong applying your changes:",
     elevateTitle: "Windows will ask for permission",
     elevateBody:
-      "These changes need administrator rights. Deflater will reopen with the standard Windows prompt, then continue right where you left off.",
+      "Changing these settings needs administrator rights, and Windows only grants those to a program as it starts. So Deflater has to close and reopen once, which is why you'll see Windows' blue User Account Control (UAC) box asking you to allow it. Say yes, and Deflater picks up exactly where you left off.",
     elevateConfirm: "Continue",
     elevateCancel: "Not now",
     resuming: "Continuing your changes…",
+    doneClean: "All changes applied.",
+    refreshNone: "Everything is live now.",
+    refreshExplorer: "One change needs the shell restarted to show, which flickers the taskbar, Start, and Search for a second.",
+    refreshSignout: "A few changes finish after you sign out and back in.",
+    refreshReboot: "A few changes finish after you restart your PC.",
+    restartExplorer: "Restart Explorer now",
+    restartingExplorer: "Restarting…",
+  },
+
+  toast: {
+    dismiss: "Dismiss",
   },
 
   maintenance: {
-    sectionBlurb: "Keep your choices applied, and get warned when apps sneak in.",
+    sectionBlurb: "Keep your choices applied after Windows updates.",
     mismatch:
-      "Automatic maintenance is set to on, but its scheduled task isn't registered. Apply any change while allowing the Windows permission prompt to set it up.",
+      "Automatic maintenance is set to on, but its scheduled task isn't registered. Apply any change and allow the User Account Control (UAC) prompt to set it up.",
     title: "Keep it fixed automatically",
     body: "Windows updates love to bring junk back. Deflater can quietly re-check after every sign-in and once a week, and re-apply your choices when something drifts.",
     on: "On",
@@ -161,10 +177,30 @@ export const en = {
     dismiss: "Dismiss all",
   },
 
+  recall: {
+    title: "Recall has saved snapshots on this PC",
+    // {size} is a human size like "2.4 GB".
+    body: (size: string) =>
+      `Windows Recall has stored about ${size} of screen snapshots here. They're a record of what's been on your screen. You can see where they live, and the Recall fixes below can pause new ones or remove these for good.`,
+    openFolder: "Show me where",
+  },
+
+  conflicts: {
+    title: "Another cleanup tool is running here",
+    body: "Deflater found a leftover scheduled task from an earlier debloat tool. It re-applies its own settings on a schedule, which can quietly fight your choices here. Deflater does this job now, so the old task is safe to remove.",
+    remove: "Remove it",
+    removing: "Removing…",
+    // {tool} names the tool the task belongs to.
+    fromTool: (tool: string) => `from ${tool}`,
+    removed: "Removed the conflicting scheduled task.",
+  },
+
   footer: {
     logs: "Open logs",
     assurance: "Never touches Defender, Secure Boot, TPM, or anything Xbox or Game Pass.",
-    version: (v: string) => `Deflater ${v} · anti-bloat enforcement, est. 2026`,
+    version: (v: string) => `Deflater ${v}`,
+    // {v} is the newer version available on GitHub.
+    updateAvailable: (v: string) => `Version ${v} is available`,
   },
 
   fixes: {
@@ -226,8 +262,8 @@ export const en = {
     },
     "device-metadata-off": {
       title: "Block manufacturer auto-installs",
-      summary: "Stops hardware makers auto-installing their apps when you plug things in.",
-      what: "Turns off automatic download of manufacturers' apps and custom icons for devices, the switch behind recent cases like LG software arriving on its own. Set both as the official policy and in the Settings screen, so the UI reflects it. Driver installation through Windows Update is not affected.",
+      summary: "Blocks Windows from auto-downloading hardware makers' companion apps.",
+      what: "Turns off Windows' automatic download of device metadata and the manufacturer apps that ride along with it. This is the documented switch for that behavior, the kind reported in recent cases like LG's monitor app installing itself. Deflater sets it both ways, as the official policy and the Settings-screen value, so it applies on Home and Pro alike. Driver installation through Windows Update is not affected.",
       tradeoff:
         "If a gadget needs a companion app, you install it yourself from the maker's site or the Store.",
       undo: "Flip the toggle off and apply.",
@@ -386,13 +422,21 @@ export const en = {
     },
 
     // ---- Apps you might use --------------------------------------------
-    "app-onedrive": {
-      title: "Uninstall OneDrive",
-      summary: "Uninstalls the OneDrive sync app and stops its sign-in nags.",
-      what: "Runs Microsoft's own OneDrive uninstaller and sets the policy that keeps it from running. Files already on this PC stay where they are, and everything in the cloud stays at onedrive.com. Nothing is deleted.",
+    "onedrive-block": {
+      title: "Turn off OneDrive",
+      summary: "Stops OneDrive running, syncing, and nagging, but leaves it installed.",
+      what: "Sets the policy that keeps OneDrive from starting. The app stays installed, so you can turn it back on any time, but it stops syncing and stops the sign-in prompts. Files already on this PC stay where they are, and everything in the cloud stays at onedrive.com.",
       tradeoff:
-        "Syncing and cloud backup stop. If you rely on OneDrive for backup or shared folders, keep it. Files stored online-only need downloading from onedrive.com first.",
-      undo: "Flip the toggle off and apply to lift the block, then reinstall OneDrive from microsoft.com/onedrive.",
+        "Syncing and cloud backup stop while this is on. If you rely on OneDrive for backup or shared folders, leave it off. Files stored online-only need downloading from onedrive.com first.",
+      undo: "Flip the toggle off and apply. OneDrive is allowed to run again.",
+    },
+    "onedrive-uninstall": {
+      title: "Also uninstall it",
+      summary: "Removes the OneDrive app entirely, using Microsoft's own uninstaller.",
+      what: "Runs Microsoft's own OneDrive uninstaller to remove the local client. Your files on this PC and everything in the cloud are untouched, nothing is deleted. This goes further than turning it off, so it's a separate choice.",
+      tradeoff:
+        "Removing it is more than turning it off. You'd reinstall from microsoft.com/onedrive to use OneDrive again.",
+      undo: "Reinstall OneDrive from microsoft.com/onedrive any time.",
     },
     "app-phonelink": {
       title: "Uninstall Phone Link",

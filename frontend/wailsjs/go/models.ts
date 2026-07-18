@@ -17,6 +17,7 @@ export namespace config {
 	export class Pending {
 	    enable: string[];
 	    disable: string[];
+	    removeTasks?: string[];
 	    token: string;
 	    created: string;
 	
@@ -28,6 +29,7 @@ export namespace config {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.enable = source["enable"];
 	        this.disable = source["disable"];
+	        this.removeTasks = source["removeTasks"];
 	        this.token = source["token"];
 	        this.created = source["created"];
 	    }
@@ -61,6 +63,7 @@ export namespace main {
 	    needsElevation: boolean;
 	    results: FixResult[];
 	    saveWarning?: string;
+	    refresh?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ApplyOutcome(source);
@@ -71,6 +74,7 @@ export namespace main {
 	        this.needsElevation = source["needsElevation"];
 	        this.results = this.convertValues(source["results"], FixResult);
 	        this.saveWarning = source["saveWarning"];
+	        this.refresh = source["refresh"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -121,6 +125,9 @@ export namespace main {
 	    reg?: RegOpInfo[];
 	    appx?: string[];
 	    status: string;
+	    refresh: string;
+	    group?: string;
+	    primary?: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new FixState(source);
@@ -136,6 +143,9 @@ export namespace main {
 	        this.reg = this.convertValues(source["reg"], RegOpInfo);
 	        this.appx = source["appx"];
 	        this.status = source["status"];
+	        this.refresh = source["refresh"];
+	        this.group = source["group"];
+	        this.primary = source["primary"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -160,6 +170,8 @@ export namespace main {
 	export class Report {
 	    version: string;
 	    elevated: boolean;
+	    edition: string;
+	    home: boolean;
 	    categories: string[];
 	    fixes: FixState[];
 	    managed: string[];
@@ -167,6 +179,7 @@ export namespace main {
 	    watcher: boolean;
 	    alerts: config.Alert[];
 	    taskMismatch: boolean;
+	    conflictingTasks: schtask.ForeignTask[];
 	    pending?: config.Pending;
 	
 	    static createFrom(source: any = {}) {
@@ -177,6 +190,8 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.version = source["version"];
 	        this.elevated = source["elevated"];
+	        this.edition = source["edition"];
+	        this.home = source["home"];
 	        this.categories = source["categories"];
 	        this.fixes = this.convertValues(source["fixes"], FixState);
 	        this.managed = source["managed"];
@@ -184,6 +199,7 @@ export namespace main {
 	        this.watcher = source["watcher"];
 	        this.alerts = this.convertValues(source["alerts"], config.Alert);
 	        this.taskMismatch = source["taskMismatch"];
+	        this.conflictingTasks = this.convertValues(source["conflictingTasks"], schtask.ForeignTask);
 	        this.pending = this.convertValues(source["pending"], config.Pending);
 	    }
 	
@@ -217,6 +233,71 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.saved = source["saved"];
 	        this.needsElevation = source["needsElevation"];
+	    }
+	}
+
+}
+
+export namespace recall {
+	
+	export class Info {
+	    present: boolean;
+	    path: string;
+	    bytes: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Info(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.present = source["present"];
+	        this.path = source["path"];
+	        this.bytes = source["bytes"];
+	    }
+	}
+
+}
+
+export namespace schtask {
+	
+	export class ForeignTask {
+	    name: string;
+	    tool: string;
+	    note: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ForeignTask(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.tool = source["tool"];
+	        this.note = source["note"];
+	    }
+	}
+
+}
+
+export namespace update {
+	
+	export class Info {
+	    available: boolean;
+	    current: string;
+	    latest: string;
+	    url: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Info(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.available = source["available"];
+	        this.current = source["current"];
+	        this.latest = source["latest"];
+	        this.url = source["url"];
 	    }
 	}
 

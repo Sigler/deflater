@@ -15,11 +15,10 @@ func useTempDir(t *testing.T) {
 func TestDefaultsWhenNoFile(t *testing.T) {
 	useTempDir(t)
 	c := Load()
-	if !c.WatcherEnabled {
-		t.Fatal("watcher should default on (the block-and-warn default)")
-	}
-	if c.Maintenance {
-		t.Fatal("maintenance should default off")
+	// Everything requiring a scheduled task defaults off, so a fresh
+	// install installs nothing and shows no task-mismatch prompt.
+	if c.WatcherEnabled || c.Maintenance {
+		t.Fatalf("maintenance and watcher should default off, got %+v", c)
 	}
 }
 
@@ -53,7 +52,7 @@ func TestCorruptFileFallsBackToDefaults(t *testing.T) {
 		t.Fatal(err)
 	}
 	c := Load()
-	if !c.WatcherEnabled || c.Maintenance || len(c.Managed) != 0 {
+	if c.WatcherEnabled || c.Maintenance || len(c.Managed) != 0 {
 		t.Fatalf("corrupt config must yield defaults, got %+v", c)
 	}
 }

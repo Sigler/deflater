@@ -21,9 +21,13 @@ import (
 	"deflater/internal/elevate"
 	"deflater/internal/engine"
 	"deflater/internal/logging"
+	"deflater/internal/psrun"
+	"deflater/internal/recall"
 	"deflater/internal/reg"
 	"deflater/internal/schtask"
 	"deflater/internal/toast"
+	"deflater/internal/update"
+	"deflater/internal/winver"
 )
 
 // App is the bridge the frontend calls. Every exported method becomes a
@@ -50,6 +54,28 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	_ = toast.Register("")
 	logging.Logf("app: started (elevated=%v)", elevate.IsElevated())
+	a.retireWatcher()
+}
+
+// retireWatcher neutralizes the silent-install watcher, which was pulled
+// from the UI (tracked in GitHub issue #2). An upgrader may still have
+// WatcherEnabled=true persisted from an older build, which would keep the
+// headless maintenance task firing "an app installed itself" toasts the
+// UI can no longer show, dismiss, or turn off. Force it off and drop any
+// orphaned alerts. Reads first so it only writes when something changes.
+func (a *App) retireWatcher() {
+	cfg := config.Load()
+	if !cfg.WatcherEnabled && len(cfg.Alerts) == 0 {
+		return
+	}
+	logging.Logf("watcher: retiring (was enabled=%v, alerts=%d)", cfg.WatcherEnabled, len(cfg.Alerts))
+	if err := config.Update(func(c *config.Config) error {
+		c.WatcherEnabled = false
+		c.Alerts = nil
+		return nil
+	}); err != nil {
+		logging.Logf("watcher: retire failed: %v", err)
+	}
 }
 
 // RegOpInfo mirrors reg.Op for the frontend, so the generated bindings
@@ -72,12 +98,21 @@ type FixState struct {
 	Reg      []RegOpInfo `json:"reg,omitempty"`
 	Appx     []string    `json:"appx,omitempty"`
 	Status   string      `json:"status"`
+	// Refresh is the lightest action that makes this fix take effect
+	// (none/explorer/signout/reboot), so the UI can say so per fix.
+	Refresh string `json:"refresh"`
+	// Group and Primary cluster related fixes into one card (e.g. block
+	// OneDrive vs also uninstall it). Empty Group means a standalone fix.
+	Group   string `json:"group,omitempty"`
+	Primary bool   `json:"primary,omitempty"`
 }
 
 // Report is everything the UI needs to render.
 type Report struct {
 	Version     string         `json:"version"`
 	Elevated    bool           `json:"elevated"`
+	Edition     string         `json:"edition"`
+	Home        bool           `json:"home"`
 	Categories  []string       `json:"categories"`
 	Fixes       []FixState     `json:"fixes"`
 	Managed     []string       `json:"managed"`
@@ -87,6 +122,9 @@ type Report struct {
 	// TaskMismatch is true when maintenance/watcher is on in config but
 	// the scheduled task is missing (or vice versa) — a self-heal hint.
 	TaskMismatch bool `json:"taskMismatch"`
+	// ConflictingTasks are scheduled tasks from earlier debloat tools that
+	// fight Deflater's state; the UI offers to remove them.
+	ConflictingTasks []schtask.ForeignTask `json:"conflictingTasks"`
 	// Pending is set when an apply was interrupted by an elevation
 	// relaunch; the UI resumes it after confirmation.
 	Pending *config.Pending `json:"pending"`
@@ -98,9 +136,12 @@ type Report struct {
 func (a *App) GetReport() (Report, error) {
 	_ = a.eng.Appx.Refresh()
 	cfg := config.Load()
+	ed := winver.Detect()
 	r := Report{
 		Version:     appVersion,
 		Elevated:    elevate.IsElevated(),
+		Edition:     ed.Edition,
+		Home:        ed.Home,
 		Categories:  catalog.Categories,
 		Managed:     cfg.Managed,
 		Maintenance: cfg.Maintenance,
@@ -114,8 +155,12 @@ func (a *App) GetReport() (Report, error) {
 	if r.Alerts == nil {
 		r.Alerts = []config.Alert{}
 	}
-	wantTask := cfg.Maintenance || cfg.WatcherEnabled
-	r.TaskMismatch = wantTask != schtask.IsInstalled()
+	// The watcher no longer drives the task (retired; issue #2), so only
+	// maintenance wants it. Flag a mismatch only in the actionable
+	// direction — wanted but missing — so an orphaned task from an older
+	// build doesn't nag; the next apply's syncTask removes it silently.
+	r.TaskMismatch = cfg.Maintenance && !schtask.IsInstalled()
+	r.ConflictingTasks = schtask.DetectForeign()
 	for _, f := range catalog.Fixes() {
 		status, err := a.eng.Status(f)
 		if err != nil {
@@ -130,6 +175,9 @@ func (a *App) GetReport() (Report, error) {
 			Profiles: f.Profiles,
 			Appx:     f.Appx,
 			Status:   status,
+			Refresh:  string(f.RefreshNeeded()),
+			Group:    f.Group,
+			Primary:  f.Primary,
 		}
 		for _, op := range f.Reg {
 			state.Reg = append(state.Reg, RegOpInfo(op))
@@ -157,6 +205,10 @@ type ApplyOutcome struct {
 	// SaveWarning is set when the machine changes applied but persisting
 	// the record failed; the changes are real but may not be tracked.
 	SaveWarning string `json:"saveWarning,omitempty"`
+	// Refresh is the heaviest action any successfully-changed fix needs to
+	// take effect (none/explorer/signout/reboot), so the UI can tell the
+	// user the single lightest thing that covers everything applied.
+	Refresh string `json:"refresh,omitempty"`
 }
 
 // Apply enables and disables fixes. Enable ids are applied (and their
@@ -252,6 +304,15 @@ func (a *App) Apply(enable []string, disable []string) (ApplyOutcome, error) {
 	})
 
 	out := ApplyOutcome{Results: results}
+	// Report the lightest action that makes everything that actually
+	// changed take effect, computed only over the fixes that succeeded.
+	var changed []string
+	for _, r := range results {
+		if r.OK {
+			changed = append(changed, r.ID)
+		}
+	}
+	out.Refresh = string(catalog.HeaviestRefresh(changed))
 	if saveErr != nil {
 		// The machine changed; don't discard the results just because
 		// recording them failed. Surface it as a warning instead.
@@ -289,6 +350,8 @@ func (a *App) SaveAndElevate(enable []string, disable []string) error {
 	}
 	// The staged changes are being handed off, not abandoned: clear dirty
 	// so the close does not warn about losing them.
+	logging.Logf("elevate: saved pending (%d enable, %d disable), relaunching as admin",
+		len(enable), len(disable))
 	a.dirty.Store(0)
 	wruntime.Quit(a.ctx)
 	return nil
@@ -318,6 +381,10 @@ func (a *App) TakePending() (*config.Pending, error) {
 		c.Pending = nil
 		return nil
 	})
+	if p != nil {
+		logging.Logf("pending: resuming (%d enable, %d disable, %d task removals)",
+			len(p.Enable), len(p.Disable), len(p.RemoveTasks))
+	}
 	return p, err
 }
 
@@ -325,6 +392,64 @@ func newToken() string {
 	b := make([]byte, 8)
 	_, _ = rand.Read(b)
 	return hex.EncodeToString(b)
+}
+
+// RemoveConflictingTasks deletes foreign debloat-tool scheduled tasks by
+// name. Only vetted names are honored (RemoveForeign enforces this).
+// Must be elevated: these tasks run with admin rights. Called directly
+// when already elevated, or on the elevated resume for a staged removal.
+func (a *App) RemoveConflictingTasks(names []string) error {
+	if !elevate.IsElevated() {
+		return fmt.Errorf("administrator rights are required to remove a scheduled task")
+	}
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	var firstErr error
+	for _, n := range names {
+		if err := schtask.RemoveForeign(n); err != nil {
+			logging.Logf("foreign task: remove %q failed: %v", n, err)
+			if firstErr == nil {
+				firstErr = err
+			}
+			continue
+		}
+		logging.Logf("foreign task: removed %q", n)
+	}
+	return firstErr
+}
+
+// StageTaskRemovalAndElevate saves a foreign-task removal request and
+// relaunches with admin rights to carry it out, mirroring SaveAndElevate.
+// The elevated instance picks it up via TakePending. Unknown task names
+// are rejected before any relaunch.
+func (a *App) StageTaskRemovalAndElevate(name string) error {
+	if !schtask.IsKnownForeign(name) {
+		return fmt.Errorf("unrecognized task %q", name)
+	}
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	token := newToken()
+	err := config.Update(func(c *config.Config) error {
+		c.Pending = &config.Pending{
+			RemoveTasks: []string{name},
+			Token:       token,
+			Created:     time.Now().Format(time.RFC3339),
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	if err := elevate.Relaunch(); err != nil {
+		_ = config.Update(func(c *config.Config) error { c.Pending = nil; return nil })
+		logging.Logf("elevate: relaunch for task removal declined: %v", err)
+		return fmt.Errorf("Windows did not grant administrator rights")
+	}
+	logging.Logf("elevate: saved pending task removal %q, relaunching as admin", name)
+	a.dirty.Store(0)
+	wruntime.Quit(a.ctx)
+	return nil
 }
 
 // SetMaintenance turns automatic re-applying on or off. Unelevated the
@@ -375,12 +500,13 @@ func (a *App) setFlag(on bool, set func(*config.Config, bool)) (ToggleResult, er
 }
 
 // syncTask makes the real scheduled task match the config: it exists
-// while either maintenance or the watcher wants it, and is removed when
-// both are off. Must be called elevated. On install it first copies the
-// exe to an admin-only per-machine location so the auto-elevating task
-// cannot be pointed at a user-writable binary.
+// while maintenance wants it, and is removed otherwise (the watcher is
+// retired and no longer keeps it alive; issue #2). Must be called
+// elevated. On install it first copies the exe to an admin-only
+// per-machine location so the auto-elevating task cannot be pointed at a
+// user-writable binary.
 func (a *App) syncTask(cfg *config.Config) error {
-	if cfg.Maintenance || cfg.WatcherEnabled {
+	if cfg.Maintenance {
 		exePath, err := installSelf()
 		if err == nil {
 			err = schtask.Install(exePath)
@@ -435,6 +561,55 @@ func (a *App) beforeClose(ctx context.Context) bool {
 		return false
 	}
 	return choice != "Yes"
+}
+
+// RestartExplorer restarts the Windows shell surfaces so fixes that only
+// need a shell refresh take effect without a sign-out. It restarts not
+// just explorer.exe (taskbar, File Explorer) but also SearchHost.exe (the
+// search box, for websearch-off / search-highlights) and
+// StartMenuExperienceHost.exe (Start recommendations, for
+// settings-suggestions) — those are separate processes that survive an
+// Explorer restart, so killing only explorer would leave those changes
+// invisible until sign-out. All three respawn on their own; explorer gets
+// a fallback start. Causes a brief flicker, so the UI warns first. Runs as
+// the current user; no elevation needed.
+func (a *App) RestartExplorer() error {
+	_, err := psrun.Run(
+		`Stop-Process -Name explorer,SearchHost,StartMenuExperienceHost -Force -ErrorAction SilentlyContinue; `+
+			`Start-Sleep -Milliseconds 400; `+
+			`if (-not (Get-Process -Name explorer -ErrorAction SilentlyContinue)) { Start-Process explorer.exe }`,
+		30*time.Second)
+	if err != nil {
+		logging.Logf("refresh: restart shell failed: %v", err)
+	}
+	return err
+}
+
+// RecallSnapshots reports whether Windows Recall has stored snapshots on
+// this PC and how much space they use. Read-only; the walk can touch many
+// files, so the UI calls it on its own rather than on every report.
+func (a *App) RecallSnapshots() recall.Info {
+	return recall.Detect()
+}
+
+// OpenRecallFolder opens the Recall snapshot store in Explorer. It refuses
+// any path that isn't exactly the store, so this can't be repurposed to
+// open an arbitrary folder.
+func (a *App) OpenRecallFolder() {
+	info := recall.Detect()
+	if !info.Present || !recall.IsStorePath(info.Path) {
+		return
+	}
+	cmd := exec.Command("explorer.exe", info.Path)
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	_ = cmd.Start()
+}
+
+// CheckUpdate compares this build against the latest GitHub release.
+// Best-effort and fail-silent: the UI shows a link only when something
+// newer exists. This is awareness, not an auto-updater.
+func (a *App) CheckUpdate() update.Info {
+	return update.Check(appVersion)
 }
 
 // DismissAlerts clears reviewed silent-install alerts.

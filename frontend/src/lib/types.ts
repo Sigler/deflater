@@ -15,6 +15,8 @@ export interface RegOp {
   revert: string;
 }
 
+export type Refresh = "none" | "explorer" | "signout" | "reboot";
+
 export interface FixState {
   id: string;
   category: string;
@@ -24,6 +26,9 @@ export interface FixState {
   reg?: RegOp[];
   appx?: string[];
   status: FixStatus;
+  refresh: Refresh;
+  group?: string;
+  primary?: boolean;
 }
 
 export interface Alert {
@@ -34,13 +39,35 @@ export interface Alert {
 export interface Pending {
   enable: string[];
   disable: string[];
+  removeTasks?: string[];
   token: string;
   created: string;
+}
+
+export interface ForeignTask {
+  name: string;
+  tool: string;
+  note: string;
+}
+
+export interface UpdateInfo {
+  available: boolean;
+  current: string;
+  latest: string;
+  url: string;
+}
+
+export interface RecallInfo {
+  present: boolean;
+  path: string;
+  bytes: number;
 }
 
 export interface Report {
   version: string;
   elevated: boolean;
+  edition: string;
+  home: boolean;
   categories: string[];
   fixes: FixState[];
   managed: string[];
@@ -48,6 +75,7 @@ export interface Report {
   watcher: boolean;
   alerts: Alert[];
   taskMismatch: boolean;
+  conflictingTasks: ForeignTask[];
   pending: Pending | null;
 }
 
@@ -63,6 +91,7 @@ export interface ApplyOutcome {
   needsElevation: boolean;
   results: FixResult[] | null;
   saveWarning?: string;
+  refresh?: Refresh;
 }
 
 export interface ToggleResult {

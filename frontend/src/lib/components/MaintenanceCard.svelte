@@ -4,18 +4,12 @@
 
   let {
     maintenance,
-    watcher,
     maintenancePending,
-    watcherPending,
     onmaintenance,
-    onwatcher,
   }: {
     maintenance: boolean;
-    watcher: boolean;
     maintenancePending: boolean;
-    watcherPending: boolean;
     onmaintenance: (on: boolean) => void;
-    onwatcher: (on: boolean) => void;
   } = $props();
 </script>
 
@@ -29,16 +23,6 @@
       {/if}
     </div>
     <Toggle checked={maintenance} label={S.maintenance.title} onchange={onmaintenance} />
-  </div>
-  <div class="line sub">
-    <div class="text">
-      <span class="title small">{S.maintenance.watcherTitle}</span>
-      <span class="body">{S.maintenance.watcherBody}</span>
-      {#if watcher && watcherPending}
-        <span class="pending">{S.maintenance.pendingElevation}</span>
-      {/if}
-    </div>
-    <Toggle checked={watcher} label={S.maintenance.watcherTitle} onchange={onwatcher} />
   </div>
 </div>
 
@@ -55,9 +39,6 @@
     gap: 16px;
     padding: 12px 0;
   }
-  .line.sub {
-    border-top: 1px solid var(--stroke);
-  }
   .text {
     flex: 1;
     display: grid;
@@ -66,9 +47,6 @@
   .title {
     font-weight: 600;
     font-size: 14px;
-  }
-  .title.small {
-    font-size: 13px;
   }
   .body {
     font-size: 12.5px;

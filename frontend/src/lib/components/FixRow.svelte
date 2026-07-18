@@ -13,21 +13,30 @@
     pending,
     applying,
     ontoggle,
+    flat = false,
+    child = false,
   }: {
     fix: FixState;
     selected: boolean;
     pending: boolean;
     applying: boolean;
     ontoggle: (id: string, value: boolean) => void;
+    // flat: no card of its own, for sitting inside a group container.
+    // child: a secondary sub-option under a group's primary fix.
+    flat?: boolean;
+    child?: boolean;
   } = $props();
 
   let expanded = $state(false);
 
   const text = $derived(S.fixes[fix.id as keyof typeof S.fixes]);
   const isApp = $derived(fix.kind === "app-junk" || fix.kind === "app-might");
-  // A gone app cannot be brought back by a toggle, so those rows show a
-  // Reinstall link (into the Microsoft Store) where the toggle would be.
-  const gone = $derived(isApp && fix.status === "removed");
+  const isOneDrive = $derived(fix.kind === "onedrive");
+  // Something already removed cannot be brought back by a toggle, so those
+  // rows show a reinstall link where the toggle would be: the Store for
+  // apps, microsoft.com/onedrive for OneDrive.
+  const gone = $derived((isApp || isOneDrive) && fix.status === "removed");
+  const onedriveDownloadUrl = "https://www.microsoft.com/microsoft-365/onedrive/download";
   // The toggle is inert while applying, and when the status couldn't be
   // read (flipping it would do nothing the user could see).
   const toggleDisabled = $derived(applying || fix.status === "unknown");
@@ -40,7 +49,7 @@
   });
 </script>
 
-<div class="row" class:expanded>
+<div class="row" class:expanded class:flat class:child>
   <div class="main">
     <button
       type="button"
@@ -79,9 +88,13 @@
         <button
           type="button"
           class="reinstall"
-          title={S.details.reinstallHint}
+          title={isOneDrive ? S.details.reinstallWebHint : S.details.reinstallHint}
           aria-label={`${S.details.reinstall} ${text?.title ?? fix.id}`}
           onclick={() => {
+            if (isOneDrive) {
+              api.openUrl(onedriveDownloadUrl);
+              return;
+            }
             const id = STORE_IDS[fix.id];
             if (id) api.openStorePage(id);
             else api.openStoreSearch(text?.store ?? text?.title ?? fix.id);
@@ -140,11 +153,32 @@
   .row:hover {
     border-color: var(--stroke-strong);
   }
+  /* Flat rows drop their own card so the group container provides it. */
+  .row.flat {
+    background: none;
+    border-color: transparent;
+    border-radius: 0;
+  }
+  .row.flat:hover {
+    border-color: transparent;
+  }
   .main {
     display: flex;
     align-items: center;
     gap: 14px;
     padding: 12px 16px;
+  }
+  /* A sub-option reads as secondary: recessed tint and a small inset, no
+     left border (which the rest of the UI avoids). */
+  .row.child {
+    background: color-mix(in srgb, var(--bg-window) 45%, transparent);
+  }
+  .row.child .main {
+    padding-left: 26px;
+  }
+  .row.child .title {
+    font-weight: 500;
+    color: var(--text-dim);
   }
   .info {
     flex: 1;

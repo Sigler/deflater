@@ -3,18 +3,31 @@
 
 import {
   Apply,
+  CheckUpdate,
   DismissAlerts,
   GetReport,
   OpenLogFolder,
+  OpenRecallFolder,
+  RecallSnapshots,
+  RemoveConflictingTasks,
   RemovePackage,
+  RestartExplorer,
   SaveAndElevate,
   SetDirty,
   SetMaintenance,
   SetWatcher,
+  StageTaskRemovalAndElevate,
   TakePending,
 } from "../../wailsjs/go/main/App";
 import { BrowserOpenURL, EventsOn } from "../../wailsjs/runtime/runtime";
-import type { ApplyOutcome, Pending, Report, ToggleResult } from "./types";
+import type {
+  ApplyOutcome,
+  Pending,
+  RecallInfo,
+  Report,
+  ToggleResult,
+  UpdateInfo,
+} from "./types";
 
 export const api = {
   getReport: () => GetReport() as Promise<Report>,
@@ -26,6 +39,13 @@ export const api = {
   setDirty: (n: number) => SetDirty(n),
   dismissAlerts: () => DismissAlerts(),
   removePackage: (name: string) => RemovePackage(name),
+  removeConflictingTasks: (names: string[]) => RemoveConflictingTasks(names),
+  stageTaskRemovalAndElevate: (name: string) => StageTaskRemovalAndElevate(name),
+  restartExplorer: () => RestartExplorer(),
+  checkUpdate: () => CheckUpdate() as Promise<UpdateInfo>,
+  openUrl: (url: string) => BrowserOpenURL(url),
+  recallSnapshots: () => RecallSnapshots() as Promise<RecallInfo>,
+  openRecallFolder: () => OpenRecallFolder(),
   openLogFolder: () => OpenLogFolder(),
   onApplyProgress: (cb: (result: unknown) => void) => EventsOn("apply:progress", cb),
   openStorePage: (productId: string) =>

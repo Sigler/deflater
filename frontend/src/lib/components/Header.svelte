@@ -2,6 +2,8 @@
   import mascot from "../../assets/mascot-512.png";
   import { S } from "../i18n";
 
+  let { applied, total }: { applied: number; total: number } = $props();
+
   // The mascot is small in the masthead; clicking it is the easter egg.
   let showBig = $state(false);
 </script>
@@ -25,6 +27,7 @@
     <h1>{S.app.name}</h1>
     <p class="tagline">{S.app.tagline}</p>
   </div>
+  <span class="applied">{S.app.scanApplied(applied, total)}</span>
 </header>
 
 {#if showBig}
@@ -57,6 +60,19 @@
     display: grid;
     gap: 2px;
     min-width: 0;
+  }
+  /* Applied count, top-right opposite the hero. */
+  .applied {
+    margin-left: auto;
+    align-self: flex-start;
+    flex: none;
+    font-size: 12px;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    padding: 5px 11px;
+    border: 1px solid var(--stroke-strong);
+    border-radius: 999px;
   }
   h1 {
     font-size: 24px;

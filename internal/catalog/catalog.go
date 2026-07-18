@@ -64,6 +64,83 @@ type Fix struct {
 	Profiles []string `json:"profiles"`
 	Reg      []reg.Op `json:"reg,omitempty"`
 	Appx     []string `json:"appx,omitempty"`
+	// Group ties related fixes together in the UI so a bundled action can
+	// be split into independent toggles (e.g. block OneDrive vs also
+	// uninstall it) that share one card. Empty means a standalone fix.
+	Group string `json:"group,omitempty"`
+	// Primary marks the lead fix of a Group; the UI renders it first and
+	// treats the rest as secondary sub-options.
+	Primary bool `json:"primary,omitempty"`
+}
+
+// Refresh is the lightest action that makes a fix visibly take effect.
+type Refresh string
+
+const (
+	RefreshNone     Refresh = "none"     // live the moment it's applied
+	RefreshExplorer Refresh = "explorer" // restart Explorer (taskbar/Start/Search/File Explorer)
+	RefreshSignOut  Refresh = "signout"  // sign out and back in
+	RefreshReboot   Refresh = "reboot"   // full restart
+)
+
+// refreshOverride names the fixes whose refresh need differs from the
+// per-Kind default. Kept as a map so the catalog entries stay terse.
+//   - The shell-surface switches only need a shell restart, not a full
+//     sign-out. RestartExplorer restarts explorer.exe AND SearchHost.exe
+//     (the search box, for websearch-off / search-highlights) and
+//     StartMenuExperienceHost.exe (Start recommendations, for
+//     settings-suggestions), which is what actually re-reads these.
+//   - recall-purge removes a component and needs a reboot to complete.
+var refreshOverride = map[string]Refresh{
+	"websearch-off":        RefreshExplorer,
+	"widgets":              RefreshExplorer,
+	"search-highlights":    RefreshExplorer,
+	"explorer-ads":         RefreshExplorer,
+	"settings-suggestions": RefreshExplorer,
+	"recall-purge":         RefreshReboot,
+}
+
+// RefreshNeeded reports the lightest action that makes this fix take
+// effect: nothing for app removals (gone immediately), the override where
+// one is listed, and a sign-out as the safe default for policy switches.
+func (f Fix) RefreshNeeded() Refresh {
+	if r, ok := refreshOverride[f.ID]; ok {
+		return r
+	}
+	switch f.Kind {
+	case AppJunk, AppMight, OneDrive:
+		return RefreshNone
+	}
+	return RefreshSignOut
+}
+
+func refreshRank(r Refresh) int {
+	switch r {
+	case RefreshNone:
+		return 0
+	case RefreshExplorer:
+		return 1
+	case RefreshReboot:
+		return 3
+	default: // RefreshSignOut and anything unknown
+		return 2
+	}
+}
+
+// HeaviestRefresh returns the strongest refresh any of the given fix ids
+// needs, so the UI can name the single action that covers them all.
+func HeaviestRefresh(ids []string) Refresh {
+	heaviest := RefreshNone
+	for _, id := range ids {
+		f, ok := ByID(id)
+		if !ok {
+			continue
+		}
+		if r := f.RefreshNeeded(); refreshRank(r) > refreshRank(heaviest) {
+			heaviest = r
+		}
+	}
+	return heaviest
 }
 
 func all() []string   { return []string{LightTouch, CleanSweep, FullDeflate} }
@@ -305,14 +382,22 @@ func Fixes() []Fix {
 
 		// ---- Apps you might use ------------------------------------------
 		{
-			// Policy blocks OneDrive from running; the engine also runs
-			// Microsoft's own uninstaller. Cloud files are untouched.
-			// Microsoft.OneDriveSync (a sync component, not the app) is
-			// deliberately NOT removed.
-			ID: "app-onedrive", Category: "might-use", Kind: OneDrive, Caution: true, Profiles: full(),
+			// The reversible half: a policy that stops OneDrive running and
+			// nagging, while leaving the app installed. The primary of the
+			// OneDrive group.
+			ID: "onedrive-block", Category: "might-use", Kind: Switch, Caution: true, Profiles: full(),
+			Group: "onedrive", Primary: true,
 			Reg: []reg.Op{
 				pol("HKLM", `SOFTWARE\Policies\Microsoft\Windows\OneDrive`, "DisableFileSyncNGSC", 1),
 			},
+		},
+		{
+			// The drastic half: run Microsoft's own uninstaller. No registry
+			// of its own; a secondary sub-option under onedrive-block. Cloud
+			// files are untouched, and Microsoft.OneDriveSync (a sync
+			// component, not the app) is deliberately NOT removed.
+			ID: "onedrive-uninstall", Category: "might-use", Kind: OneDrive, Caution: true, Profiles: full(),
+			Group: "onedrive",
 		},
 		{
 			// Phone Link and the Cross Device Experience Host travel

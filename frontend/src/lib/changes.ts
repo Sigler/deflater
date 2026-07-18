@@ -15,12 +15,12 @@ function needsApply(fix: FixState, selected: boolean): boolean {
 }
 
 // A fix needs reverting when deselected but still fully in effect. App
-// removals cannot be reverted here (the Store reinstalls them), and
-// partly-applied fixes are left alone rather than half-undone, so only
-// fully-on switches and OneDrive's policy half qualify.
+// removals and the OneDrive uninstall cannot be reverted here (reinstall
+// from the Store or microsoft.com/onedrive), and partly-applied fixes are
+// left alone rather than half-undone, so only fully-on switches qualify.
 function needsRevert(fix: FixState, selected: boolean): boolean {
   if (selected) return false;
-  if (fix.kind === "app-junk" || fix.kind === "app-might") return false;
+  if (fix.kind === "app-junk" || fix.kind === "app-might" || fix.kind === "onedrive") return false;
   return fix.status === "on";
 }
 
