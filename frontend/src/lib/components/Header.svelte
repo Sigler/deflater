@@ -2,11 +2,7 @@
   import mascot from "../../assets/mascot-512.png";
   import { S } from "../i18n";
 
-  let {
-    elevated,
-    inPlace,
-    total,
-  }: { elevated: boolean; inPlace: number; total: number } = $props();
+  let { elevated }: { elevated: boolean } = $props();
 </script>
 
 <header>
@@ -14,8 +10,6 @@
     <img class="mascot" src={mascot} alt="" draggable="false" />
     <div class="words">
       <h1>{S.app.name}</h1>
-      <p class="tagline">{S.app.tagline}</p>
-      <p class="readout">{S.app.readout(inPlace, total)}</p>
       <p class="assurance">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path
@@ -64,22 +58,13 @@
   }
   .words {
     display: grid;
-    gap: 3px;
+    gap: 4px;
     min-width: 0;
   }
   h1 {
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 700;
     letter-spacing: -0.01em;
-  }
-  .tagline {
-    color: var(--text-dim);
-    font-size: 13px;
-  }
-  .readout {
-    color: var(--text-faint);
-    font-size: 12px;
-    font-variant-numeric: tabular-nums;
   }
   .assurance {
     display: flex;

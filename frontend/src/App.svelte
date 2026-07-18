@@ -10,6 +10,7 @@
   import Header from "./lib/components/Header.svelte";
   import MaintenanceCard from "./lib/components/MaintenanceCard.svelte";
   import Modal from "./lib/components/Modal.svelte";
+  import ScanBar from "./lib/components/ScanBar.svelte";
   import type { FixResult, Report } from "./lib/types";
 
   let report = $state<Report | null>(null);
@@ -144,7 +145,7 @@
 {:else}
   <div class="page">
     <main>
-      <Header elevated={report.elevated} inPlace={inPlaceCount} total={report.fixes.length} />
+      <Header elevated={report.elevated} />
       <AlertsBanner alerts={report.alerts} onremove={removeAlertPackage} ondismiss={dismissAlerts} />
 
       {#if doneMessage}
@@ -158,6 +159,8 @@
           {/if}
         </div>
       {/if}
+
+      <ScanBar inPlace={inPlaceCount} total={report.fixes.length} />
 
       {#each report.categories as cat (cat)}
         <CategorySection

@@ -16,15 +16,14 @@ export interface FixStrings {
 export const en = {
   app: {
     name: "Deflater",
-    tagline: "Let the air out of Windows 11.",
     assurance:
       "Deflater never touches Defender, Secure Boot, TPM, or anything Xbox or Game Pass.",
     assuranceShort: "Anti-cheat safe, always.",
     elevated: "Administrator",
     notElevated: "Standard user",
     notElevatedHint: "Windows will ask for permission when you apply changes.",
-    readout: (n: number, total: number) =>
-      `Deflater reads this PC's real settings. ${n} of ${total} fixes are already applied. Nothing changes until you press Apply.`,
+    scanChecked: "Checked your current Windows settings",
+    scanApplied: (n: number, total: number) => `${n} of ${total} applied`,
     loading: "Reading your system…",
     loadingHint: "Checking every switch and installed app. This takes a few seconds.",
   },
