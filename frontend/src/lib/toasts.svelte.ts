@@ -6,6 +6,14 @@
 
 export type ToastKind = "success" | "warn" | "info";
 
+export interface ToastAction {
+  label: string;
+  // Runs when the button is clicked. If it returns a promise, the button
+  // shows a busy label until it settles. The toast is dismissed after.
+  run: () => void | Promise<void>;
+  busyLabel?: string;
+}
+
 export interface Toast {
   id: number;
   kind: ToastKind;
@@ -14,6 +22,8 @@ export interface Toast {
   detail?: string[];
   // Sticky toasts never auto-dismiss; the user closes them.
   sticky?: boolean;
+  // An optional single action button (e.g. "Restart Explorer").
+  action?: ToastAction;
 }
 
 let seq = 0;

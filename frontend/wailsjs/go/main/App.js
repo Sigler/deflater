@@ -30,6 +30,10 @@ export function RemovePackage(arg1) {
   return window['go']['main']['App']['RemovePackage'](arg1);
 }
 
+export function RestartExplorer() {
+  return window['go']['main']['App']['RestartExplorer']();
+}
+
 export function SaveAndElevate(arg1, arg2) {
   return window['go']['main']['App']['SaveAndElevate'](arg1, arg2);
 }

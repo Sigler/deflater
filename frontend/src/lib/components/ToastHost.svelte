@@ -1,7 +1,20 @@
 <script lang="ts">
   import { fly } from "svelte/transition";
   import { S } from "../i18n";
-  import { dismissToast, toasts } from "../toasts.svelte";
+  import { dismissToast, type Toast, toasts } from "../toasts.svelte";
+
+  let busy = $state<number | null>(null);
+
+  async function runAction(t: Toast) {
+    if (!t.action) return;
+    busy = t.id;
+    try {
+      await t.action.run();
+    } finally {
+      busy = null;
+      dismissToast(t.id);
+    }
+  }
 </script>
 
 <div class="host" aria-live="polite" aria-atomic="false">
@@ -14,6 +27,11 @@
           {#each t.detail as line (line)}
             <p class="detail">{line}</p>
           {/each}
+        {/if}
+        {#if t.action}
+          <button type="button" class="action" disabled={busy === t.id} onclick={() => runAction(t)}>
+            {busy === t.id ? (t.action.busyLabel ?? t.action.label) : t.action.label}
+          </button>
         {/if}
       </div>
       <button type="button" class="x" onclick={() => dismissToast(t.id)} aria-label={S.toast.dismiss}>
@@ -75,6 +93,23 @@
   .detail {
     font-size: 12px;
     color: var(--text-dim);
+  }
+  .action {
+    justify-self: start;
+    margin-top: 4px;
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: var(--r-control);
+    border: 1px solid var(--stroke-strong);
+    background: var(--bg-card);
+    color: var(--text);
+  }
+  .action:hover:not(:disabled) {
+    border-color: var(--coral);
+    color: var(--coral-bright);
+  }
+  .action:disabled {
+    opacity: 0.6;
   }
   .x {
     color: var(--text-faint);

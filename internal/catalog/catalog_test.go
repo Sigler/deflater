@@ -152,3 +152,31 @@ func TestDataDestroyingFixesAreGuarded(t *testing.T) {
 		}
 	}
 }
+
+func TestRefreshClassification(t *testing.T) {
+	// App removals are immediate; policy switches default to a sign-out.
+	for _, f := range Fixes() {
+		switch f.Kind {
+		case AppJunk, AppMight, OneDrive:
+			if _, override := refreshOverride[f.ID]; !override && f.RefreshNeeded() != RefreshNone {
+				t.Errorf("%s: app removal should refresh immediately, got %q", f.ID, f.RefreshNeeded())
+			}
+		}
+	}
+	// Every override id must be a real fix, so the map can't rot.
+	for id := range refreshOverride {
+		if _, ok := ByID(id); !ok {
+			t.Errorf("refreshOverride names unknown fix %q", id)
+		}
+	}
+	// HeaviestRefresh picks the strongest need across a set.
+	if got := HeaviestRefresh([]string{"websearch-off", "recall-purge"}); got != RefreshReboot {
+		t.Errorf("heaviest of {explorer, reboot} = %q, want reboot", got)
+	}
+	if got := HeaviestRefresh([]string{"app-news", "websearch-off"}); got != RefreshExplorer {
+		t.Errorf("heaviest of {none, explorer} = %q, want explorer", got)
+	}
+	if got := HeaviestRefresh(nil); got != RefreshNone {
+		t.Errorf("heaviest of {} = %q, want none", got)
+	}
+}

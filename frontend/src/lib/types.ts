@@ -15,6 +15,8 @@ export interface RegOp {
   revert: string;
 }
 
+export type Refresh = "none" | "explorer" | "signout" | "reboot";
+
 export interface FixState {
   id: string;
   category: string;
@@ -24,6 +26,7 @@ export interface FixState {
   reg?: RegOp[];
   appx?: string[];
   status: FixStatus;
+  refresh: Refresh;
 }
 
 export interface Alert {
@@ -78,6 +81,7 @@ export interface ApplyOutcome {
   needsElevation: boolean;
   results: FixResult[] | null;
   saveWarning?: string;
+  refresh?: Refresh;
 }
 
 export interface ToggleResult {

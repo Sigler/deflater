@@ -136,6 +136,12 @@ export const en = {
     elevateCancel: "Not now",
     resuming: "Continuing your changes…",
     doneClean: "All changes applied.",
+    refreshNone: "Everything is live now.",
+    refreshExplorer: "One change needs an Explorer restart to show, which flickers the taskbar for a second.",
+    refreshSignout: "A few changes finish after you sign out and back in.",
+    refreshReboot: "A few changes finish after you restart your PC.",
+    restartExplorer: "Restart Explorer now",
+    restartingExplorer: "Restarting…",
   },
 
   toast: {

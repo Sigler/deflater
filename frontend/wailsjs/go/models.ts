@@ -63,6 +63,7 @@ export namespace main {
 	    needsElevation: boolean;
 	    results: FixResult[];
 	    saveWarning?: string;
+	    refresh?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ApplyOutcome(source);
@@ -73,6 +74,7 @@ export namespace main {
 	        this.needsElevation = source["needsElevation"];
 	        this.results = this.convertValues(source["results"], FixResult);
 	        this.saveWarning = source["saveWarning"];
+	        this.refresh = source["refresh"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -123,6 +125,7 @@ export namespace main {
 	    reg?: RegOpInfo[];
 	    appx?: string[];
 	    status: string;
+	    refresh: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new FixState(source);
@@ -138,6 +141,7 @@ export namespace main {
 	        this.reg = this.convertValues(source["reg"], RegOpInfo);
 	        this.appx = source["appx"];
 	        this.status = source["status"];
+	        this.refresh = source["refresh"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

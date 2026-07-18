@@ -21,6 +21,7 @@ import (
 	"deflater/internal/elevate"
 	"deflater/internal/engine"
 	"deflater/internal/logging"
+	"deflater/internal/psrun"
 	"deflater/internal/reg"
 	"deflater/internal/schtask"
 	"deflater/internal/toast"
@@ -73,6 +74,9 @@ type FixState struct {
 	Reg      []RegOpInfo `json:"reg,omitempty"`
 	Appx     []string    `json:"appx,omitempty"`
 	Status   string      `json:"status"`
+	// Refresh is the lightest action that makes this fix take effect
+	// (none/explorer/signout/reboot), so the UI can say so per fix.
+	Refresh string `json:"refresh"`
 }
 
 // Report is everything the UI needs to render.
@@ -135,6 +139,7 @@ func (a *App) GetReport() (Report, error) {
 			Profiles: f.Profiles,
 			Appx:     f.Appx,
 			Status:   status,
+			Refresh:  string(f.RefreshNeeded()),
 		}
 		for _, op := range f.Reg {
 			state.Reg = append(state.Reg, RegOpInfo(op))
@@ -162,6 +167,10 @@ type ApplyOutcome struct {
 	// SaveWarning is set when the machine changes applied but persisting
 	// the record failed; the changes are real but may not be tracked.
 	SaveWarning string `json:"saveWarning,omitempty"`
+	// Refresh is the heaviest action any successfully-changed fix needs to
+	// take effect (none/explorer/signout/reboot), so the UI can tell the
+	// user the single lightest thing that covers everything applied.
+	Refresh string `json:"refresh,omitempty"`
 }
 
 // Apply enables and disables fixes. Enable ids are applied (and their
@@ -257,6 +266,15 @@ func (a *App) Apply(enable []string, disable []string) (ApplyOutcome, error) {
 	})
 
 	out := ApplyOutcome{Results: results}
+	// Report the lightest action that makes everything that actually
+	// changed take effect, computed only over the fixes that succeeded.
+	var changed []string
+	for _, r := range results {
+		if r.OK {
+			changed = append(changed, r.ID)
+		}
+	}
+	out.Refresh = string(catalog.HeaviestRefresh(changed))
 	if saveErr != nil {
 		// The machine changed; don't discard the results just because
 		// recording them failed. Surface it as a warning instead.
@@ -503,6 +521,22 @@ func (a *App) beforeClose(ctx context.Context) bool {
 		return false
 	}
 	return choice != "Yes"
+}
+
+// RestartExplorer restarts the Windows shell so fixes that only need an
+// Explorer refresh (taskbar, Start, Search, File Explorer) take effect
+// without a sign-out. It causes a brief flicker, so the UI warns first.
+// Runs as the current user; no elevation needed.
+func (a *App) RestartExplorer() error {
+	_, err := psrun.Run(
+		`Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue; `+
+			`Start-Sleep -Milliseconds 400; `+
+			`if (-not (Get-Process -Name explorer -ErrorAction SilentlyContinue)) { Start-Process explorer.exe }`,
+		30*time.Second)
+	if err != nil {
+		logging.Logf("refresh: restart explorer failed: %v", err)
+	}
+	return err
 }
 
 // CheckUpdate compares this build against the latest GitHub release.

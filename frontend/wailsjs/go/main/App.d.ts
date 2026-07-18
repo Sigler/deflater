@@ -18,6 +18,8 @@ export function RemoveConflictingTasks(arg1:Array<string>):Promise<void>;
 
 export function RemovePackage(arg1:string):Promise<void>;
 
+export function RestartExplorer():Promise<void>;
+
 export function SaveAndElevate(arg1:Array<string>,arg2:Array<string>):Promise<void>;
 
 export function SetDirty(arg1:number):Promise<void>;

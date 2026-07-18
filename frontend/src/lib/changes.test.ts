@@ -9,6 +9,7 @@ function fix(partial: Partial<FixState> & { id: string }): FixState {
     caution: false,
     profiles: ["light-touch", "clean-sweep", "full-deflate"],
     status: "off",
+    refresh: "signout",
     ...partial,
   };
 }

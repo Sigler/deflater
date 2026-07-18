@@ -15,7 +15,7 @@
   import ScanBar from "./lib/components/ScanBar.svelte";
   import ToastHost from "./lib/components/ToastHost.svelte";
   import { clearToasts, pushToast } from "./lib/toasts.svelte";
-  import type { FixResult, Report, UpdateInfo } from "./lib/types";
+  import type { FixResult, Refresh, Report, UpdateInfo } from "./lib/types";
 
   let report = $state<Report | null>(null);
   let loadError = $state("");
@@ -155,7 +155,7 @@
       selection = new SvelteSet(next);
       maintenancePendingElevation = false;
       watcherPendingElevation = false;
-      announceApply(outcome.saveWarning ?? "", failed, r.maintenance);
+      announceApply(outcome.saveWarning ?? "", failed, r.maintenance, outcome.refresh ?? "signout");
     } catch (e) {
       pushToast({ kind: "warn", message: S.apply.applyError, detail: [`${e}`], sticky: true });
     } finally {
@@ -167,7 +167,12 @@
   // Turn an apply outcome into the right toast: a sticky warning when
   // something failed or couldn't be recorded, otherwise a quick success
   // note (with the maintenance nudge only when maintenance is still off).
-  function announceApply(saveWarning: string, failed: FixResult[], maintenance: boolean) {
+  function announceApply(
+    saveWarning: string,
+    failed: FixResult[],
+    maintenance: boolean,
+    outcomeRefresh: Refresh,
+  ) {
     if (saveWarning) {
       pushToast({ kind: "warn", message: S.apply.saveWarning, sticky: true });
       return;
@@ -183,11 +188,26 @@
       });
       return;
     }
-    pushToast({
-      kind: "success",
-      message: S.apply.doneClean,
-      detail: maintenance ? undefined : [S.apply.doneMaintenanceTip],
-    });
+    // Success: tell the user the single lightest action that makes
+    // everything they applied take effect, and offer to do it when that's
+    // just an Explorer restart.
+    const refresh = outcomeRefresh;
+    const detail: string[] = [];
+    let action: { label: string; busyLabel: string; run: () => Promise<void> } | undefined;
+    if (refresh === "none") detail.push(S.apply.refreshNone);
+    else if (refresh === "reboot") detail.push(S.apply.refreshReboot);
+    else if (refresh === "explorer") {
+      detail.push(S.apply.refreshExplorer);
+      action = {
+        label: S.apply.restartExplorer,
+        busyLabel: S.apply.restartingExplorer,
+        run: () => api.restartExplorer(),
+      };
+    } else detail.push(S.apply.refreshSignout);
+    if (!maintenance) detail.push(S.apply.doneMaintenanceTip);
+    // An Explorer restart can't auto-dismiss (the click drives it), so
+    // keep that toast sticky; otherwise let it fade.
+    pushToast({ kind: "success", message: S.apply.doneClean, detail, action, sticky: !!action });
   }
 
   function apply() {

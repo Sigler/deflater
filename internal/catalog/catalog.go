@@ -66,6 +66,74 @@ type Fix struct {
 	Appx     []string `json:"appx,omitempty"`
 }
 
+// Refresh is the lightest action that makes a fix visibly take effect.
+type Refresh string
+
+const (
+	RefreshNone     Refresh = "none"     // live the moment it's applied
+	RefreshExplorer Refresh = "explorer" // restart Explorer (taskbar/Start/Search/File Explorer)
+	RefreshSignOut  Refresh = "signout"  // sign out and back in
+	RefreshReboot   Refresh = "reboot"   // full restart
+)
+
+// refreshOverride names the fixes whose refresh need differs from the
+// per-Kind default. Kept as a map so the catalog entries stay terse.
+//   - The shell-surface switches only need an Explorer restart, not a
+//     full sign-out (websearch-off's SearchHost dependency is covered by
+//     restarting Explorer).
+//   - recall-purge removes a component and needs a reboot to complete.
+var refreshOverride = map[string]Refresh{
+	"websearch-off":        RefreshExplorer,
+	"widgets":              RefreshExplorer,
+	"search-highlights":    RefreshExplorer,
+	"explorer-ads":         RefreshExplorer,
+	"settings-suggestions": RefreshExplorer,
+	"recall-purge":         RefreshReboot,
+}
+
+// RefreshNeeded reports the lightest action that makes this fix take
+// effect: nothing for app removals (gone immediately), the override where
+// one is listed, and a sign-out as the safe default for policy switches.
+func (f Fix) RefreshNeeded() Refresh {
+	if r, ok := refreshOverride[f.ID]; ok {
+		return r
+	}
+	switch f.Kind {
+	case AppJunk, AppMight, OneDrive:
+		return RefreshNone
+	}
+	return RefreshSignOut
+}
+
+func refreshRank(r Refresh) int {
+	switch r {
+	case RefreshNone:
+		return 0
+	case RefreshExplorer:
+		return 1
+	case RefreshReboot:
+		return 3
+	default: // RefreshSignOut and anything unknown
+		return 2
+	}
+}
+
+// HeaviestRefresh returns the strongest refresh any of the given fix ids
+// needs, so the UI can name the single action that covers them all.
+func HeaviestRefresh(ids []string) Refresh {
+	heaviest := RefreshNone
+	for _, id := range ids {
+		f, ok := ByID(id)
+		if !ok {
+			continue
+		}
+		if r := f.RefreshNeeded(); refreshRank(r) > refreshRank(heaviest) {
+			heaviest = r
+		}
+	}
+	return heaviest
+}
+
 func all() []string   { return []string{LightTouch, CleanSweep, FullDeflate} }
 func sweep() []string { return []string{CleanSweep, FullDeflate} }
 func full() []string  { return []string{FullDeflate} }
