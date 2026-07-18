@@ -6,7 +6,7 @@
 
 A small Windows 11 app that turns off ads, nags, and preinstalled junk, and keeps them off.
 
-**Version 0.1. This is an alpha of an alpha.** It is a hobby project built to share with friends and family, it is probably not very good, and it is barely tested. It edits your Windows registry and uninstalls apps. Do not use it if you care about your machine. Use at your own risk, and read what a fix does before applying it.
+**Version 0.1. This is an alpha of an alpha.** It is a hobby project built to share with friends and family, it is probably not very good, and it is barely tested. It edits your Windows registry and uninstalls apps. Do not use it if you care about your machine. Use at your own risk, and read what a fix does before applying it. Will probably break your computer.
 
 <p align="center">
   <img src="assets/screenshot.png" width="720" alt="The Deflater main window: a list of fixes with Applied and Not applied labels, toggles, and an Apply button" />
