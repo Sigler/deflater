@@ -6,11 +6,13 @@ import {
   DismissAlerts,
   GetReport,
   OpenLogFolder,
+  RemoveConflictingTasks,
   RemovePackage,
   SaveAndElevate,
   SetDirty,
   SetMaintenance,
   SetWatcher,
+  StageTaskRemovalAndElevate,
   TakePending,
 } from "../../wailsjs/go/main/App";
 import { BrowserOpenURL, EventsOn } from "../../wailsjs/runtime/runtime";
@@ -26,6 +28,8 @@ export const api = {
   setDirty: (n: number) => SetDirty(n),
   dismissAlerts: () => DismissAlerts(),
   removePackage: (name: string) => RemovePackage(name),
+  removeConflictingTasks: (names: string[]) => RemoveConflictingTasks(names),
+  stageTaskRemovalAndElevate: (name: string) => StageTaskRemovalAndElevate(name),
   openLogFolder: () => OpenLogFolder(),
   onApplyProgress: (cb: (result: unknown) => void) => EventsOn("apply:progress", cb),
   openStorePage: (productId: string) =>

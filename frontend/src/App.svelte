@@ -7,6 +7,7 @@
   import AlertsBanner from "./lib/components/AlertsBanner.svelte";
   import ApplyBar from "./lib/components/ApplyBar.svelte";
   import CategoryNav from "./lib/components/CategoryNav.svelte";
+  import ConflictBanner from "./lib/components/ConflictBanner.svelte";
   import CategorySection from "./lib/components/CategorySection.svelte";
   import Header from "./lib/components/Header.svelte";
   import MaintenanceCard from "./lib/components/MaintenanceCard.svelte";
@@ -98,8 +99,21 @@
       // (consume-on-read, so it can never fire twice) and run it.
       const pending = await api.takePending();
       if (pending) {
-        progressText = S.apply.resuming;
-        await runApply(pending.enable, pending.disable);
+        if (pending.enable.length || pending.disable.length) {
+          progressText = S.apply.resuming;
+          await runApply(pending.enable, pending.disable);
+        }
+        // A staged foreign-task removal completes here, now that we are
+        // elevated. Refresh so the removed task drops off the banner.
+        if (pending.removeTasks?.length) {
+          try {
+            await api.removeConflictingTasks(pending.removeTasks);
+            report = await api.getReport();
+          } catch (e) {
+            doneWarn = true;
+            doneMessage = `${e}`;
+          }
+        }
       }
     } catch (e) {
       loadError = `${e}`;
@@ -219,6 +233,19 @@
     if (report) report.alerts = report.alerts.filter((a) => a.package !== pkg);
   }
 
+  async function removeConflictingTask(name: string) {
+    if (!report) return;
+    // Deleting a task that runs as admin needs elevation. If we already
+    // have it, do it now; otherwise stage it and relaunch (this window
+    // closes, then resumes elevated and finishes the removal on load).
+    if (report.elevated) {
+      await api.removeConflictingTasks([name]);
+      report = await api.getReport();
+    } else {
+      await api.stageTaskRemovalAndElevate(name);
+    }
+  }
+
   async function dismissAlerts() {
     await api.dismissAlerts();
     if (report) report.alerts = [];
@@ -253,6 +280,7 @@
           onremove={removeAlertPackage}
           ondismiss={dismissAlerts}
         />
+        <ConflictBanner tasks={report.conflictingTasks} onremove={removeConflictingTask} />
 
         {#if doneMessage}
           <div class="done" class:warn={doneWarn}>

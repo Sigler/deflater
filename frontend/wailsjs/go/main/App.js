@@ -18,6 +18,10 @@ export function OpenLogFolder() {
   return window['go']['main']['App']['OpenLogFolder']();
 }
 
+export function RemoveConflictingTasks(arg1) {
+  return window['go']['main']['App']['RemoveConflictingTasks'](arg1);
+}
+
 export function RemovePackage(arg1) {
   return window['go']['main']['App']['RemovePackage'](arg1);
 }
@@ -36,6 +40,10 @@ export function SetMaintenance(arg1) {
 
 export function SetWatcher(arg1) {
   return window['go']['main']['App']['SetWatcher'](arg1);
+}
+
+export function StageTaskRemovalAndElevate(arg1) {
+  return window['go']['main']['App']['StageTaskRemovalAndElevate'](arg1);
 }
 
 export function TakePending() {

@@ -11,6 +11,8 @@ export function GetReport():Promise<main.Report>;
 
 export function OpenLogFolder():Promise<void>;
 
+export function RemoveConflictingTasks(arg1:Array<string>):Promise<void>;
+
 export function RemovePackage(arg1:string):Promise<void>;
 
 export function SaveAndElevate(arg1:Array<string>,arg2:Array<string>):Promise<void>;
@@ -20,5 +22,7 @@ export function SetDirty(arg1:number):Promise<void>;
 export function SetMaintenance(arg1:boolean):Promise<main.ToggleResult>;
 
 export function SetWatcher(arg1:boolean):Promise<main.ToggleResult>;
+
+export function StageTaskRemovalAndElevate(arg1:string):Promise<void>;
 
 export function TakePending():Promise<config.Pending>;

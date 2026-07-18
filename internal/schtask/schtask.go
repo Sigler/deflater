@@ -113,10 +113,79 @@ func Uninstall() error {
 	return err
 }
 
-// IsInstalled reports whether the task exists.
+// IsInstalled reports whether Deflater's own task exists.
 func IsInstalled() bool {
-	_, err := psrun.Run(fmt.Sprintf(`schtasks.exe /Query /TN "%s" | Out-Null`, TaskName), 60*time.Second)
+	return taskExists(TaskName)
+}
+
+func taskExists(name string) bool {
+	_, err := psrun.Run(fmt.Sprintf(`schtasks.exe /Query /TN "%s" | Out-Null`, name), 60*time.Second)
 	return err == nil
+}
+
+// ForeignTask is a scheduled task created by an earlier debloat tool that
+// re-applies its own settings (typically at every sign-in) and so fights
+// Deflater's state. These are recognized by exact name from a vetted
+// list, never by pattern, so Deflater never proposes deleting a task it
+// doesn't positively recognize.
+type ForeignTask struct {
+	Name string `json:"name"`
+	Tool string `json:"tool"`
+	Note string `json:"note"`
+}
+
+// knownForeign lists tasks belonging to earlier debloat tools Deflater
+// supersedes. Keep this exact and conservative: a false positive here
+// offers to delete something the user may want.
+var knownForeign = []ForeignTask{
+	{
+		Name: "Win11-Debloat-Maintenance",
+		Tool: "the older win11-debloat script",
+		Note: "It re-runs that script after every sign-in, which can quietly undo the choices you make here.",
+	},
+}
+
+// DetectForeign returns the known foreign tasks currently registered.
+// Read-only; safe to call unelevated on every report.
+func DetectForeign() []ForeignTask {
+	found := []ForeignTask{}
+	for _, t := range knownForeign {
+		if taskExists(t.Name) {
+			found = append(found, t)
+		}
+	}
+	return found
+}
+
+// canonicalForeign returns the vetted-list spelling of a foreign task
+// name (case-insensitive match), or "" if it is not on the list.
+func canonicalForeign(name string) string {
+	for _, t := range knownForeign {
+		if strings.EqualFold(t.Name, name) {
+			return t.Name
+		}
+	}
+	return ""
+}
+
+// IsKnownForeign reports whether name is a recognized foreign task.
+func IsKnownForeign(name string) bool { return canonicalForeign(name) != "" }
+
+// RemoveForeign deletes a foreign task, but only one whose exact name is
+// on the vetted list, and it interpolates only the vetted literal (never
+// the caller's string) into the command. So a caller can never drive it
+// to delete an arbitrary task. Deleting a task that runs as admin needs
+// elevation; call this from the elevated instance.
+func RemoveForeign(name string) error {
+	canon := canonicalForeign(name)
+	if canon == "" {
+		return fmt.Errorf("refusing to remove unrecognized task %q", name)
+	}
+	if !taskExists(canon) {
+		return nil
+	}
+	_, err := psrun.Run(fmt.Sprintf(`schtasks.exe /Delete /F /TN "%s"`, canon), 60*time.Second)
+	return err
 }
 
 func utf16LE(s string) []byte {

@@ -17,6 +17,7 @@ export namespace config {
 	export class Pending {
 	    enable: string[];
 	    disable: string[];
+	    removeTasks?: string[];
 	    token: string;
 	    created: string;
 	
@@ -28,6 +29,7 @@ export namespace config {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.enable = source["enable"];
 	        this.disable = source["disable"];
+	        this.removeTasks = source["removeTasks"];
 	        this.token = source["token"];
 	        this.created = source["created"];
 	    }
@@ -167,6 +169,7 @@ export namespace main {
 	    watcher: boolean;
 	    alerts: config.Alert[];
 	    taskMismatch: boolean;
+	    conflictingTasks: schtask.ForeignTask[];
 	    pending?: config.Pending;
 	
 	    static createFrom(source: any = {}) {
@@ -184,6 +187,7 @@ export namespace main {
 	        this.watcher = source["watcher"];
 	        this.alerts = this.convertValues(source["alerts"], config.Alert);
 	        this.taskMismatch = source["taskMismatch"];
+	        this.conflictingTasks = this.convertValues(source["conflictingTasks"], schtask.ForeignTask);
 	        this.pending = this.convertValues(source["pending"], config.Pending);
 	    }
 	
@@ -217,6 +221,27 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.saved = source["saved"];
 	        this.needsElevation = source["needsElevation"];
+	    }
+	}
+
+}
+
+export namespace schtask {
+	
+	export class ForeignTask {
+	    name: string;
+	    tool: string;
+	    note: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ForeignTask(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.tool = source["tool"];
+	        this.note = source["note"];
 	    }
 	}
 

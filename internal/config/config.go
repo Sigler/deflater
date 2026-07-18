@@ -32,8 +32,11 @@ type Alert struct {
 type Pending struct {
 	Enable  []string `json:"enable"`
 	Disable []string `json:"disable"`
-	Token   string   `json:"token"`
-	Created string   `json:"created"` // RFC 3339
+	// RemoveTasks are foreign scheduled tasks to delete once elevated
+	// (their removal needs admin). Carried across the same relaunch.
+	RemoveTasks []string `json:"removeTasks,omitempty"`
+	Token       string   `json:"token"`
+	Created     string   `json:"created"` // RFC 3339
 }
 
 // Expired reports whether a pending request is older than the window in

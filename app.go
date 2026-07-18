@@ -87,6 +87,9 @@ type Report struct {
 	// TaskMismatch is true when maintenance/watcher is on in config but
 	// the scheduled task is missing (or vice versa) — a self-heal hint.
 	TaskMismatch bool `json:"taskMismatch"`
+	// ConflictingTasks are scheduled tasks from earlier debloat tools that
+	// fight Deflater's state; the UI offers to remove them.
+	ConflictingTasks []schtask.ForeignTask `json:"conflictingTasks"`
 	// Pending is set when an apply was interrupted by an elevation
 	// relaunch; the UI resumes it after confirmation.
 	Pending *config.Pending `json:"pending"`
@@ -116,6 +119,7 @@ func (a *App) GetReport() (Report, error) {
 	}
 	wantTask := cfg.Maintenance || cfg.WatcherEnabled
 	r.TaskMismatch = wantTask != schtask.IsInstalled()
+	r.ConflictingTasks = schtask.DetectForeign()
 	for _, f := range catalog.Fixes() {
 		status, err := a.eng.Status(f)
 		if err != nil {
@@ -330,6 +334,64 @@ func newToken() string {
 	b := make([]byte, 8)
 	_, _ = rand.Read(b)
 	return hex.EncodeToString(b)
+}
+
+// RemoveConflictingTasks deletes foreign debloat-tool scheduled tasks by
+// name. Only vetted names are honored (RemoveForeign enforces this).
+// Must be elevated: these tasks run with admin rights. Called directly
+// when already elevated, or on the elevated resume for a staged removal.
+func (a *App) RemoveConflictingTasks(names []string) error {
+	if !elevate.IsElevated() {
+		return fmt.Errorf("administrator rights are required to remove a scheduled task")
+	}
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	var firstErr error
+	for _, n := range names {
+		if err := schtask.RemoveForeign(n); err != nil {
+			logging.Logf("foreign task: remove %q failed: %v", n, err)
+			if firstErr == nil {
+				firstErr = err
+			}
+			continue
+		}
+		logging.Logf("foreign task: removed %q", n)
+	}
+	return firstErr
+}
+
+// StageTaskRemovalAndElevate saves a foreign-task removal request and
+// relaunches with admin rights to carry it out, mirroring SaveAndElevate.
+// The elevated instance picks it up via TakePending. Unknown task names
+// are rejected before any relaunch.
+func (a *App) StageTaskRemovalAndElevate(name string) error {
+	if !schtask.IsKnownForeign(name) {
+		return fmt.Errorf("unrecognized task %q", name)
+	}
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	token := newToken()
+	err := config.Update(func(c *config.Config) error {
+		c.Pending = &config.Pending{
+			RemoveTasks: []string{name},
+			Token:       token,
+			Created:     time.Now().Format(time.RFC3339),
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	if err := elevate.Relaunch(); err != nil {
+		_ = config.Update(func(c *config.Config) error { c.Pending = nil; return nil })
+		logging.Logf("elevate: relaunch for task removal declined: %v", err)
+		return fmt.Errorf("Windows did not grant administrator rights")
+	}
+	logging.Logf("elevate: saved pending task removal %q, relaunching as admin", name)
+	a.dirty.Store(0)
+	wruntime.Quit(a.ctx)
+	return nil
 }
 
 // SetMaintenance turns automatic re-applying on or off. Unelevated the

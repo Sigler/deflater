@@ -34,8 +34,15 @@ export interface Alert {
 export interface Pending {
   enable: string[];
   disable: string[];
+  removeTasks?: string[];
   token: string;
   created: string;
+}
+
+export interface ForeignTask {
+  name: string;
+  tool: string;
+  note: string;
 }
 
 export interface Report {
@@ -48,6 +55,7 @@ export interface Report {
   watcher: boolean;
   alerts: Alert[];
   taskMismatch: boolean;
+  conflictingTasks: ForeignTask[];
   pending: Pending | null;
 }
 

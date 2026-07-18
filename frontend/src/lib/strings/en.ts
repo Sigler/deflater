@@ -161,6 +161,15 @@ export const en = {
     dismiss: "Dismiss all",
   },
 
+  conflicts: {
+    title: "Another cleanup tool is running here",
+    body: "Deflater found a leftover scheduled task from an earlier debloat tool. It re-applies its own settings on a schedule, which can quietly fight your choices here. Deflater does this job now, so the old task is safe to remove.",
+    remove: "Remove it",
+    removing: "Removing…",
+    // {tool} names the tool the task belongs to.
+    fromTool: (tool: string) => `from ${tool}`,
+  },
+
   footer: {
     logs: "Open logs",
     assurance: "Never touches Defender, Secure Boot, TPM, or anything Xbox or Game Pass.",
