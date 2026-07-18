@@ -4,8 +4,10 @@
    imitating it. */
 
 :root {
-  /* Surfaces, deepest at the bottom of the stack */
-  --bg-window: #10151f;
+  /* Surfaces, deepest at the bottom of the stack. The window color
+     matches the mascot art's background exactly, so the art sits
+     directly on the page with no visible frame. */
+  --bg-window: #0b111b;
   --bg-panel: #151b28;
   --bg-card: #1b2230;
   --bg-raised: #222b3c;

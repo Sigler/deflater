@@ -2,6 +2,7 @@
   import { slide } from "svelte/transition";
   import { api } from "../api";
   import { S } from "../i18n";
+  import { STORE_IDS } from "../storeIds";
   import type { FixState } from "../types";
   import StatusChip from "./StatusChip.svelte";
   import Toggle from "./Toggle.svelte";
@@ -73,7 +74,11 @@
         type="button"
         class="reinstall"
         title={S.details.reinstallHint}
-        onclick={() => api.openStoreSearch(text?.store ?? text?.title ?? fix.id)}
+        onclick={() => {
+          const id = STORE_IDS[fix.id];
+          if (id) api.openStorePage(id);
+          else api.openStoreSearch(text?.store ?? text?.title ?? fix.id);
+        }}
       >
         {S.details.reinstall}
       </button>

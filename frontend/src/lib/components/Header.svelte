@@ -1,7 +1,6 @@
 <script lang="ts">
   import mascot from "../../assets/mascot-512.png";
   import { S } from "../i18n";
-  import LogoMark from "./LogoMark.svelte";
 
   let {
     elevated,
@@ -12,7 +11,7 @@
 
 <header>
   <div class="brand">
-    <LogoMark size={44} />
+    <img class="mascot" src={mascot} alt="" draggable="false" />
     <div class="words">
       <h1>{S.app.name}</h1>
       <p class="tagline">{S.app.tagline}</p>
@@ -37,12 +36,9 @@
       </p>
     </div>
   </div>
-  <div class="side">
-    <span class="mode" class:admin={elevated} title={elevated ? "" : S.app.notElevatedHint}>
-      {elevated ? S.app.elevated : S.app.notElevated}
-    </span>
-    <img class="mascot" src={mascot} alt="" draggable="false" />
-  </div>
+  <span class="mode" class:admin={elevated} title={elevated ? "" : S.app.notElevatedHint}>
+    {elevated ? S.app.elevated : S.app.notElevated}
+  </span>
 </header>
 
 <style>
@@ -55,8 +51,16 @@
   .brand {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 4px;
     min-width: 0;
+  }
+  /* The art shares the page background, so it sits directly on it:
+     no frame, no border, no box. */
+  .mascot {
+    flex: none;
+    width: 148px;
+    height: 148px;
+    user-select: none;
   }
   .words {
     display: grid;
@@ -89,13 +93,8 @@
   .assurance svg {
     flex: none;
   }
-  .side {
-    flex: none;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
   .mode {
+    flex: none;
     font-size: 11.5px;
     padding: 5px 10px;
     border-radius: var(--r-chip);
@@ -107,14 +106,5 @@
   .mode.admin {
     color: var(--sage);
     background: var(--sage-soft);
-  }
-  .mascot {
-    width: 132px;
-    height: 132px;
-    border-radius: 10px;
-    border: 1px solid var(--stroke-strong);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
-    transform: rotate(-1.2deg);
-    user-select: none;
   }
 </style>

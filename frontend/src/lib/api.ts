@@ -26,6 +26,8 @@ export const api = {
   removePackage: (name: string) => RemovePackage(name),
   openLogFolder: () => OpenLogFolder(),
   onApplyProgress: (cb: (result: unknown) => void) => EventsOn("apply:progress", cb),
+  openStorePage: (productId: string) =>
+    BrowserOpenURL(`ms-windows-store://pdp/?ProductId=${productId}`),
   openStoreSearch: (query: string) =>
     BrowserOpenURL(`ms-windows-store://search/?query=${encodeURIComponent(query)}`),
 };

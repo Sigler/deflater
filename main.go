@@ -34,8 +34,8 @@ func main() {
 		Height:    780,
 		MinWidth:  920,
 		MinHeight: 620,
-		// Deep navy behind the webview so resizes never flash white.
-		BackgroundColour: &options.RGBA{R: 16, G: 21, B: 31, A: 255},
+		// Matches the mascot art's navy so resizes never flash white.
+		BackgroundColour: &options.RGBA{R: 11, G: 17, B: 27, A: 255},
 		AssetServer:      &assetserver.Options{Assets: assets},
 		OnStartup:        app.startup,
 		OnBeforeClose:    app.beforeClose,

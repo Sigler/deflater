@@ -232,12 +232,9 @@
     color: var(--text-dim);
   }
   .loading-mascot {
-    width: 280px;
-    height: 280px;
-    border-radius: 14px;
-    border: 1px solid var(--stroke-strong);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-    margin-bottom: 8px;
+    width: 320px;
+    height: 320px;
+    margin-bottom: 4px;
     user-select: none;
   }
   .loading .hint {
