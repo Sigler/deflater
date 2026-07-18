@@ -289,6 +289,8 @@ func (a *App) SaveAndElevate(enable []string, disable []string) error {
 	}
 	// The staged changes are being handed off, not abandoned: clear dirty
 	// so the close does not warn about losing them.
+	logging.Logf("elevate: saved pending (%d enable, %d disable), relaunching as admin",
+		len(enable), len(disable))
 	a.dirty.Store(0)
 	wruntime.Quit(a.ctx)
 	return nil
@@ -318,6 +320,9 @@ func (a *App) TakePending() (*config.Pending, error) {
 		c.Pending = nil
 		return nil
 	})
+	if p != nil {
+		logging.Logf("pending: resuming saved apply (%d enable, %d disable)", len(p.Enable), len(p.Disable))
+	}
 	return p, err
 }
 

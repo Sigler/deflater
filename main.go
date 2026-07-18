@@ -9,6 +9,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
 
+	"deflater/internal/elevate"
 	"deflater/internal/logging"
 	"deflater/internal/maintain"
 )
@@ -19,6 +20,10 @@ var assets embed.FS
 const appVersion = "0.1.1"
 
 func main() {
+	// One line at the very first moment of every launch, so an elevated
+	// relaunch is visible in the log even if it exits before the window.
+	logging.Logf("launch: args=%v elevated=%v", os.Args[1:], elevate.IsElevated())
+
 	// Headless maintenance pass, run by the scheduled task. No window.
 	for _, arg := range os.Args[1:] {
 		if arg == "--maintenance" {
@@ -28,6 +33,10 @@ func main() {
 	}
 
 	app := NewApp()
+	// Note: deliberately NO Wails SingleInstanceLock. It rejects the app's
+	// own elevated self-relaunch as a "second instance", breaking the
+	// apply-with-admin flow. Concurrent-write safety is already handled by
+	// the config file lock and the one-shot pending token.
 	err := wails.Run(&options.App{
 		Title:     "Deflater",
 		Width:     1080,
@@ -40,11 +49,6 @@ func main() {
 		OnStartup:        app.startup,
 		OnBeforeClose:    app.beforeClose,
 		Bind:             []any{app},
-		// One window at a time: a second launch focuses the first, so two
-		// instances can never race on config or double-apply.
-		SingleInstanceLock: &options.SingleInstanceLock{
-			UniqueId: "deflater-single-instance",
-		},
 		Windows: &windows.Options{
 			Theme: windows.Dark,
 		},
