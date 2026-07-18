@@ -37,7 +37,7 @@
   header {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 18px;
   }
   .mascot-btn {
     flex: none;

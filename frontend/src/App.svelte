@@ -64,6 +64,11 @@
       const el = document.getElementById(`sec-${item.id}`);
       if (el && el.offsetTop <= y) current = item.id;
     }
+    // At the end of the scroll the last section may never reach the
+    // spy line; scrolled to the bottom means the last section is it.
+    if (scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 8) {
+      current = navItems[navItems.length - 1].id;
+    }
     activeSection = current;
   }
 
@@ -223,6 +228,10 @@
         {/each}
 
         <div class="anchor" id="sec-maintenance">
+          <div class="secheader">
+            <h2>{S.nav.maintenance}</h2>
+            <p>{S.maintenance.sectionBlurb}</p>
+          </div>
           <MaintenanceCard
             maintenance={report.maintenance}
             watcher={report.watcher}
@@ -318,6 +327,26 @@
   }
   .anchor {
     scroll-margin-top: 96px;
+    display: grid;
+    gap: 10px;
+  }
+  /* Matches the category section headers in CategorySection.svelte. */
+  .secheader {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 0 2px;
+  }
+  .secheader h2 {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--text);
+  }
+  .secheader p {
+    color: var(--text-faint);
+    font-size: 12.5px;
   }
   .loading {
     height: 100vh;

@@ -135,6 +135,7 @@ export const en = {
   },
 
   maintenance: {
+    sectionBlurb: "Keep your choices applied, and get warned when apps sneak in.",
     title: "Keep it fixed automatically",
     body: "Windows updates love to bring junk back. Deflater can quietly re-check after every sign-in and once a week, and re-apply your choices when something drifts.",
     on: "On",
