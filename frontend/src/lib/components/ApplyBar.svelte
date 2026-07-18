@@ -46,6 +46,17 @@
     backdrop-filter: blur(12px);
     border-top: 1px solid var(--stroke);
   }
+  /* Caution tape where the action happens, at a whisper. */
+  .bar::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: repeating-linear-gradient(-55deg, var(--coral) 0 10px, transparent 10px 20px);
+    opacity: 0.45;
+  }
   .count {
     font-size: 13px;
     color: var(--text-dim);

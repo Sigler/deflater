@@ -1,12 +1,15 @@
 <script lang="ts">
   import { S } from "../i18n";
-  import type { FixStatus } from "../types";
+  import type { FixKind, FixStatus } from "../types";
 
   let {
     status,
+    kind,
     selected,
     pending,
-  }: { status: FixStatus; selected: boolean; pending: boolean } = $props();
+  }: { status: FixStatus; kind: FixKind; selected: boolean; pending: boolean } = $props();
+
+  const uninstalls = $derived(kind === "app-junk" || kind === "app-might" || kind === "onedrive");
 
   // One vocabulary for every row: the chip describes the fix the title
   // names, so it can never be misread as the state of the annoyance
@@ -17,9 +20,12 @@
   // is not fully protecting you), and the details panel explains why.
   const chip = $derived.by((): { label: string; tone: string } => {
     if (pending) {
-      return selected
-        ? { label: S.status.willApply, tone: "change" }
-        : { label: S.status.willUndo, tone: "change" };
+      if (selected) {
+        return uninstalls
+          ? { label: S.status.willUninstall, tone: "change" }
+          : { label: S.status.willApply, tone: "change" };
+      }
+      return { label: S.status.willUndo, tone: "change" };
     }
     switch (status) {
       case "on":

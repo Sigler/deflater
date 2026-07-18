@@ -6,6 +6,7 @@
   import { S } from "./lib/i18n";
   import AlertsBanner from "./lib/components/AlertsBanner.svelte";
   import ApplyBar from "./lib/components/ApplyBar.svelte";
+  import CategoryNav from "./lib/components/CategoryNav.svelte";
   import CategorySection from "./lib/components/CategorySection.svelte";
   import Header from "./lib/components/Header.svelte";
   import MaintenanceCard from "./lib/components/MaintenanceCard.svelte";
@@ -36,6 +37,42 @@
   // staged changes that were never applied.
   $effect(() => {
     if (report) void api.setDirty(applying ? 0 : changeCount);
+  });
+
+  // Section navigation: sidenav when wide, tabs when narrow, scrollspy
+  // highlighting whichever section is under the sticky bars.
+  let scroller = $state<HTMLDivElement | null>(null);
+  let activeSection = $state("");
+
+  const navItems = $derived(
+    report
+      ? [
+          ...report.categories.map((c) => ({
+            id: c,
+            label: S.categories[c as keyof typeof S.categories]?.nav ?? c,
+          })),
+          { id: "maintenance", label: S.nav.maintenance },
+        ]
+      : [],
+  );
+
+  function updateActive() {
+    if (!scroller || navItems.length === 0) return;
+    const y = scroller.scrollTop + 150;
+    let current = navItems[0].id;
+    for (const item of navItems) {
+      const el = document.getElementById(`sec-${item.id}`);
+      if (el && el.offsetTop <= y) current = item.id;
+    }
+    activeSection = current;
+  }
+
+  function jump(id: string) {
+    document.getElementById(`sec-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  $effect(() => {
+    if (report) updateActive();
   });
 
   function byCategory(cat: string) {
@@ -143,52 +180,68 @@
     <p class="hint">{S.app.loadingHint}</p>
   </div>
 {:else}
-  <div class="page">
-    <main>
-      <Header elevated={report.elevated} />
-      <AlertsBanner alerts={report.alerts} onremove={removeAlertPackage} ondismiss={dismissAlerts} />
-
-      {#if doneMessage}
-        <div class="done" class:warn={failures.length > 0}>
-          <p>{doneMessage}</p>
-          {#each failures as f (f.id)}
-            <p class="fail">{S.fixes[f.id as keyof typeof S.fixes]?.title ?? f.id}: {f.error}</p>
-          {/each}
-          {#if failures.length === 0 && !report.maintenance}
-            <p class="tip">{S.apply.doneMaintenanceTip}</p>
-          {/if}
-        </div>
-      {/if}
-
-      <ScanBar inPlace={inPlaceCount} total={report.fixes.length} />
-
-      {#each report.categories as cat (cat)}
-        <CategorySection
-          id={cat}
-          fixes={byCategory(cat)}
-          {selection}
-          pending={pendingIds}
-          ontoggle={toggleFix}
+  <div class="page" bind:this={scroller} onscroll={updateActive}>
+    <div class="shell">
+      <aside class="sidenav">
+        <CategoryNav items={navItems} active={activeSection} variant="side" onjump={jump} />
+      </aside>
+      <main>
+        <Header />
+        <AlertsBanner
+          alerts={report.alerts}
+          onremove={removeAlertPackage}
+          ondismiss={dismissAlerts}
         />
-      {/each}
 
-      <MaintenanceCard
-        maintenance={report.maintenance}
-        watcher={report.watcher}
-        maintenancePending={maintenancePendingElevation}
-        watcherPending={watcherPendingElevation}
-        onmaintenance={setMaintenance}
-        onwatcher={setWatcher}
-      />
+        {#if doneMessage}
+          <div class="done" class:warn={failures.length > 0}>
+            <p>{doneMessage}</p>
+            {#each failures as f (f.id)}
+              <p class="fail">{S.fixes[f.id as keyof typeof S.fixes]?.title ?? f.id}: {f.error}</p>
+            {/each}
+            {#if failures.length === 0 && !report.maintenance}
+              <p class="tip">{S.apply.doneMaintenanceTip}</p>
+            {/if}
+          </div>
+        {/if}
 
-      <footer>
-        <button type="button" class="link" onclick={() => api.openLogFolder()}>
-          {S.footer.logs}
-        </button>
-        <span>{S.footer.madeWith}</span>
-        <span>{S.footer.version(report.version)}</span>
-      </footer>
-    </main>
+        <div class="stickytop">
+          <ScanBar inPlace={inPlaceCount} total={report.fixes.length} />
+          <div class="tabsrow">
+            <CategoryNav items={navItems} active={activeSection} variant="tabs" onjump={jump} />
+          </div>
+        </div>
+
+        {#each report.categories as cat (cat)}
+          <CategorySection
+            id={cat}
+            fixes={byCategory(cat)}
+            {selection}
+            pending={pendingIds}
+            ontoggle={toggleFix}
+          />
+        {/each}
+
+        <div class="anchor" id="sec-maintenance">
+          <MaintenanceCard
+            maintenance={report.maintenance}
+            watcher={report.watcher}
+            maintenancePending={maintenancePendingElevation}
+            watcherPending={watcherPendingElevation}
+            onmaintenance={setMaintenance}
+            onwatcher={setWatcher}
+          />
+        </div>
+
+        <footer>
+          <button type="button" class="link" onclick={() => api.openLogFolder()}>
+            {S.footer.logs}
+          </button>
+          <span>{S.footer.assurance}</span>
+          <span class="stamp">{S.footer.version(report.version)}</span>
+        </footer>
+      </main>
+    </div>
 
     <ApplyBar {changeCount} {applying} {progressText} onapply={apply} onreset={reset} />
   </div>
@@ -217,14 +270,54 @@
     flex-direction: column;
     overflow-y: auto;
   }
-  main {
+  .shell {
     flex: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-content: center;
+  }
+  .sidenav {
+    display: none;
+  }
+  main {
     width: min(860px, 100%);
     margin: 0 auto;
-    padding: 28px 24px 40px;
+    padding: 24px 24px 40px;
     display: grid;
     gap: 22px;
     align-content: start;
+  }
+  @media (min-width: 1220px) {
+    .shell {
+      grid-template-columns: 190px minmax(0, 860px);
+      gap: 28px;
+    }
+    .sidenav {
+      display: block;
+      padding-top: 128px;
+    }
+    .sidenav :global(nav) {
+      position: sticky;
+      top: 24px;
+    }
+    main {
+      width: 100%;
+      margin: 0;
+    }
+    .tabsrow {
+      display: none;
+    }
+  }
+  .stickytop {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: color-mix(in srgb, var(--bg-window) 90%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--stroke);
+  }
+  .anchor {
+    scroll-margin-top: 96px;
   }
   .loading {
     height: 100vh;
@@ -295,6 +388,11 @@
   }
   .link:hover {
     color: var(--text);
+  }
+  .stamp {
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    font-size: 10.5px;
   }
   .primary {
     padding: 8px 18px;

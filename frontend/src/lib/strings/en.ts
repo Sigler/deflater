@@ -16,12 +16,7 @@ export interface FixStrings {
 export const en = {
   app: {
     name: "Deflater",
-    assurance:
-      "Deflater never touches Defender, Secure Boot, TPM, or anything Xbox or Game Pass.",
-    assuranceShort: "Anti-cheat safe, always.",
-    elevated: "Administrator",
-    notElevated: "Standard user",
-    notElevatedHint: "Windows will ask for permission when you apply changes.",
+    tagline: "Make Windows slightly less obnoxious.",
     scanChecked: "Checked your current Windows settings",
     scanApplied: (n: number, total: number) => `${n} of ${total} applied`,
     loading: "Reading your system…",
@@ -50,35 +45,46 @@ export const en = {
   categories: {
     "ads-nags": {
       title: "Ads and nags",
+      nav: "Ads and nags",
       blurb: "Promotions, upsells, and pestering built into Windows itself.",
     },
     "junk-apps": {
       title: "Junk apps",
+      nav: "Junk apps",
       blurb: "Preinstalled apps nobody asked for, and the pipes that sneak new ones in.",
     },
     "start-search": {
       title: "Start menu, search, and taskbar",
+      nav: "Start and search",
       blurb: "Clutter in the places you use most.",
     },
     "copilot-ai": {
       title: "Copilot and AI",
+      nav: "Copilot and AI",
       blurb: "Windows AI features, off until you actually want them.",
     },
     privacy: {
       title: "Privacy",
+      nav: "Privacy",
       blurb: "What this PC quietly sends back to Microsoft.",
     },
     "might-use": {
       title: "Apps you might use",
+      nav: "Apps you might use",
       blurb:
         "Preinstalled, but some people use these on purpose. Untick anything you actually use.",
     },
+  },
+
+  nav: {
+    maintenance: "Maintenance",
   },
 
   status: {
     applied: "Applied",
     notApplied: "Not applied",
     willApply: "Will apply",
+    willUninstall: "Will uninstall",
     willUndo: "Will undo",
     unknown: "Unknown",
   },
@@ -149,8 +155,8 @@ export const en = {
 
   footer: {
     logs: "Open logs",
-    version: (v: string) => `Deflater ${v}`,
-    madeWith: "Made to be shared. Check every box yourself before applying.",
+    assurance: "Never touches Defender, Secure Boot, TPM, or anything Xbox or Game Pass.",
+    version: (v: string) => `Deflater ${v} · anti-bloat enforcement, est. 2026`,
   },
 
   fixes: {

@@ -68,27 +68,29 @@
         <span class="tradeoff" transition:slide={{ duration: 150 }}>{text.tradeoff}</span>
       {/if}
     </button>
-    <StatusChip status={fix.status} {selected} {pending} />
-    {#if gone}
-      <button
-        type="button"
-        class="reinstall"
-        title={S.details.reinstallHint}
-        onclick={() => {
-          const id = STORE_IDS[fix.id];
-          if (id) api.openStorePage(id);
-          else api.openStoreSearch(text?.store ?? text?.title ?? fix.id);
-        }}
-      >
-        {S.details.reinstall}
-      </button>
-    {:else}
-      <Toggle
-        checked={selected}
-        label={text?.title ?? fix.id}
-        onchange={(v) => ontoggle(fix.id, v)}
-      />
-    {/if}
+    <StatusChip status={fix.status} kind={fix.kind} {selected} {pending} />
+    <span class="control">
+      {#if gone}
+        <button
+          type="button"
+          class="reinstall"
+          title={S.details.reinstallHint}
+          onclick={() => {
+            const id = STORE_IDS[fix.id];
+            if (id) api.openStorePage(id);
+            else api.openStoreSearch(text?.store ?? text?.title ?? fix.id);
+          }}
+        >
+          {S.details.reinstall}
+        </button>
+      {:else}
+        <Toggle
+          checked={selected}
+          label={text?.title ?? fix.id}
+          onchange={(v) => ontoggle(fix.id, v)}
+        />
+      {/if}
+    </span>
     <span class="dotslot" aria-hidden={!pending}>
       {#if pending}
         <span class="pending" title={S.badges.willChange} aria-label={S.badges.willChange}></span>
@@ -119,9 +121,10 @@
 </div>
 
 <style>
-  /* Rows sit flat; the toggles are the only puffy thing on the page. */
+  /* Rows sit flat on the panel surface, one card style everywhere;
+     the toggles are the only puffy thing on the page. */
   .row {
-    background: var(--bg-card);
+    background: var(--bg-panel);
     border: 1px solid var(--stroke);
     border-radius: var(--r-card);
     transition: border-color 0.12s ease;
@@ -226,8 +229,17 @@
     color: var(--gold) !important;
     font-size: 12.5px !important;
   }
-  .reinstall {
+  /* Fixed-width slot shared by the toggle and the Reinstall button, so
+     the chips right-align to the same edge on every row. */
+  .control {
     flex: none;
+    width: 88px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .reinstall {
+    width: 100%;
     font-size: 12px;
     padding: 6px 12px;
     border-radius: var(--r-control);

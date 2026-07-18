@@ -22,7 +22,7 @@
 </script>
 
 {#if fixes.length > 0}
-  <section>
+  <section id={"sec-" + id}>
     <header>
       <h2>{text?.title ?? id}</h2>
       <p>{text?.blurb ?? ""}</p>
@@ -40,6 +40,7 @@
   section {
     display: grid;
     gap: 10px;
+    scroll-margin-top: 96px;
   }
   header {
     display: flex;
@@ -47,9 +48,13 @@
     gap: 12px;
     padding: 0 2px;
   }
+  /* Stencil headers: uppercase, spaced, like markings on a crate. */
   h2 {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--text);
   }
   header p {
     color: var(--text-faint);

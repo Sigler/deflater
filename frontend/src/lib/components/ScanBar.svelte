@@ -21,18 +21,14 @@
 </div>
 
 <style>
+  /* Stickiness and backdrop belong to the wrapper in App.svelte, so the
+     tabs can share the same sticky block. */
   .bar {
-    position: sticky;
-    top: 0;
-    z-index: 10;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding: 10px 2px;
-    background: color-mix(in srgb, var(--bg-window) 90%, transparent);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--stroke);
+    padding: 10px 2px 6px;
   }
   .what {
     display: flex;
