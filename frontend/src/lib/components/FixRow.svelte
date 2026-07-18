@@ -11,11 +11,13 @@
     fix,
     selected,
     pending,
+    applying,
     ontoggle,
   }: {
     fix: FixState;
     selected: boolean;
     pending: boolean;
+    applying: boolean;
     ontoggle: (id: string, value: boolean) => void;
   } = $props();
 
@@ -26,6 +28,9 @@
   // A gone app cannot be brought back by a toggle, so those rows show a
   // Reinstall link (into the Microsoft Store) where the toggle would be.
   const gone = $derived(isApp && fix.status === "removed");
+  // The toggle is inert while applying, and when the status couldn't be
+  // read (flipping it would do nothing the user could see).
+  const toggleDisabled = $derived(applying || fix.status === "unknown");
 
   const mechanism = $derived.by(() => {
     const parts: string[] = [];
@@ -75,6 +80,7 @@
           type="button"
           class="reinstall"
           title={S.details.reinstallHint}
+          aria-label={`${S.details.reinstall} ${text?.title ?? fix.id}`}
           onclick={() => {
             const id = STORE_IDS[fix.id];
             if (id) api.openStorePage(id);
@@ -86,14 +92,16 @@
       {:else}
         <Toggle
           checked={selected}
+          disabled={toggleDisabled}
           label={text?.title ?? fix.id}
           onchange={(v) => ontoggle(fix.id, v)}
         />
       {/if}
     </span>
-    <span class="dotslot" aria-hidden={!pending}>
+    <span class="dotslot">
       {#if pending}
-        <span class="pending" title={S.badges.willChange} aria-label={S.badges.willChange}></span>
+        <span class="pending" role="img" title={S.badges.willChange} aria-label={S.badges.willChange}
+        ></span>
       {/if}
     </span>
   </div>

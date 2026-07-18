@@ -11,16 +11,18 @@ import {
   SetDirty,
   SetMaintenance,
   SetWatcher,
+  TakePending,
 } from "../../wailsjs/go/main/App";
 import { BrowserOpenURL, EventsOn } from "../../wailsjs/runtime/runtime";
-import type { ApplyOutcome, Report } from "./types";
+import type { ApplyOutcome, Pending, Report, ToggleResult } from "./types";
 
 export const api = {
   getReport: () => GetReport() as Promise<Report>,
   apply: (enable: string[], disable: string[]) => Apply(enable, disable) as Promise<ApplyOutcome>,
   saveAndElevate: (enable: string[], disable: string[]) => SaveAndElevate(enable, disable),
-  setMaintenance: (on: boolean) => SetMaintenance(on) as Promise<boolean>,
-  setWatcher: (on: boolean) => SetWatcher(on) as Promise<boolean>,
+  takePending: () => TakePending() as Promise<Pending | null>,
+  setMaintenance: (on: boolean) => SetMaintenance(on) as Promise<ToggleResult>,
+  setWatcher: (on: boolean) => SetWatcher(on) as Promise<ToggleResult>,
   setDirty: (n: number) => SetDirty(n),
   dismissAlerts: () => DismissAlerts(),
   removePackage: (name: string) => RemovePackage(name),

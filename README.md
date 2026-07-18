@@ -31,6 +31,18 @@ Defender, Secure Boot, TPM, driver updates, Windows Update itself, or anything X
 
 Switches turn back off inside the app and restore the Windows defaults. Uninstalled apps come back from the Microsoft Store. Settings and logs live in `%LOCALAPPDATA%\Deflater`, and there is an "Open logs" link in the app footer.
 
+## Verifying your download
+
+The exe is unsigned, so Windows SmartScreen will warn you that the publisher
+is unknown; that is expected for a small hobby project. Each release includes
+a `SHA256SUMS.txt`. To check the download matches:
+
+```powershell
+Get-FileHash Deflater.exe -Algorithm SHA256
+```
+
+Compare the result against the value in `SHA256SUMS.txt` on the release page.
+
 ## Building it yourself
 
 You need [Go](https://go.dev) 1.26+, [Node](https://nodejs.org) 20+, and the [Wails v2 CLI](https://wails.io):

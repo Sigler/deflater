@@ -34,6 +34,8 @@ export interface Alert {
 export interface Pending {
   enable: string[];
   disable: string[];
+  token: string;
+  created: string;
 }
 
 export interface Report {
@@ -45,6 +47,7 @@ export interface Report {
   maintenance: boolean;
   watcher: boolean;
   alerts: Alert[];
+  taskMismatch: boolean;
   pending: Pending | null;
 }
 
@@ -53,9 +56,16 @@ export interface FixResult {
   ok: boolean;
   error?: string;
   status: FixStatus;
+  phase: "start" | "done";
 }
 
 export interface ApplyOutcome {
   needsElevation: boolean;
   results: FixResult[] | null;
+  saveWarning?: string;
+}
+
+export interface ToggleResult {
+  saved: boolean;
+  needsElevation: boolean;
 }

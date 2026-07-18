@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: windows-latest
@@ -40,7 +43,7 @@ jobs:
 
       - name: Build
         run: |
-          go install github.com/wailsapp/wails/v2/cmd/wails@latest
+          go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0
           wails build
 
       - name: Frontend typecheck (needs generated bindings)

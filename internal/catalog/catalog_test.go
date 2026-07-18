@@ -6,15 +6,17 @@ import (
 )
 
 // The forbidden list backs Deflater's core promise: nothing here may ever
-// touch security posture or the gaming stack.
+// touch security posture, the gaming stack, driver delivery, or the
+// update servicing plumbing. Matched case-insensitively.
 var forbiddenPathFragments = []string{
-	`\Defender`, `\WindowsDefender`, `SecureBoot`, `\Tpm`, `DeviceGuard`,
-	`HypervisorEnforcedCodeIntegrity`, `\Xbox`, `GameBar`, `GamingServices`,
-	`\WindowsUpdate`, `MemoryManagement`,
+	`\Defender`, `\WindowsDefender`, `SmartScreen`, `SecureBoot`, `\Tpm`, `DeviceGuard`,
+	`HypervisorEnforcedCodeIntegrity`, `\Xbox`, `GameBar`, `GameDVR`, `GamingServices`,
+	`\WindowsUpdate`, `WindowsSelfHost`, `MemoryManagement`,
+	`DriverSearching`, `CurrentControlSet\Services`,
 }
 
 var forbiddenPackageFragments = []string{
-	"Xbox", "Gaming", "SecHealth", "Defender",
+	"Xbox", "Gaming", "SecHealth", "Defender", "WindowsStore", "DesktopAppInstaller",
 }
 
 func TestCatalogIntegrity(t *testing.T) {
@@ -116,6 +118,36 @@ func TestLightTouchRemovesNothing(t *testing.T) {
 		for _, p := range f.Profiles {
 			if p == LightTouch && f.Kind != Switch {
 				t.Errorf("%s: Light Touch must only flip switches, found kind %q", f.ID, f.Kind)
+			}
+		}
+	}
+}
+
+// Some switch values do more than flip a preference: they destroy user
+// data (deleting Recall snapshots) and cannot be undone. Those must
+// never ride in Light Touch, whose promise is "nothing you would notice
+// missing", and must always carry a caution flag.
+var dataDestroyingValues = map[string]bool{
+	"AllowRecallEnablement": true,
+}
+
+func TestDataDestroyingFixesAreGuarded(t *testing.T) {
+	for _, f := range Fixes() {
+		destroys := false
+		for _, op := range f.Reg {
+			if dataDestroyingValues[op.Name] {
+				destroys = true
+			}
+		}
+		if !destroys {
+			continue
+		}
+		if !f.Caution {
+			t.Errorf("%s: destroys data but is not caution-flagged", f.ID)
+		}
+		for _, p := range f.Profiles {
+			if p == LightTouch {
+				t.Errorf("%s: destroys data but is in Light Touch", f.ID)
 			}
 		}
 	}

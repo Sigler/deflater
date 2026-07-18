@@ -23,6 +23,14 @@ jobs:
         with:
           node-version: "22"
 
+      # The tag must match the version compiled into the app, so a release
+      # can never ship a binary that reports a different version.
+      - name: Check tag matches app version
+        run: |
+          $tag = "${{ github.ref_name }}".TrimStart('v')
+          $app = (Select-String -Path main.go -Pattern 'const appVersion = "([^"]+)"').Matches.Groups[1].Value
+          if ($tag -ne $app) { throw "tag $tag does not match appVersion $app" }
+
       # frontend/dist is gitignored build output, but the Go embed needs
       # it to exist before the frontend has ever been built.
       - name: Stub frontend dist for Go embed
@@ -30,16 +38,33 @@ jobs:
           New-Item -ItemType Directory -Force frontend/dist | Out-Null
           Set-Content frontend/dist/index.html "placeholder"
 
-      - name: Test
+      - name: Frontend checks
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run lint
+          npm test
+
+      - name: Go checks
         run: go test ./...
 
       - name: Build
         run: |
-          go install github.com/wailsapp/wails/v2/cmd/wails@latest
+          go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0
           wails build
 
+      # Publish a checksum alongside the exe so users can verify their
+      # download with Get-FileHash.
+      - name: Checksum
+        run: |
+          $h = (Get-FileHash build/bin/Deflater.exe -Algorithm SHA256).Hash
+          "$h  Deflater.exe" | Out-File -Encoding ascii build/bin/SHA256SUMS.txt
+          Write-Host "SHA256: $h"
+
       - name: Publish release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: build/bin/Deflater.exe
-          generate_release_notes: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create ${{ github.ref_name }}
+          build/bin/Deflater.exe build/bin/SHA256SUMS.txt
+          --generate-notes

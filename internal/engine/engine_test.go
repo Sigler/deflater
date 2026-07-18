@@ -65,7 +65,7 @@ func TestSwitchLifecycle(t *testing.T) {
 		t.Fatalf("after drift: status %q, want partial", status)
 	}
 
-	if err := eng.Revert(fix); err != nil {
+	if err := eng.Revert(fix, nil); err != nil {
 		t.Fatalf("Revert: %v", err)
 	}
 	if status, _ = eng.Status(fix); status != StatusOff {
@@ -80,6 +80,35 @@ func TestSwitchLifecycle(t *testing.T) {
 	defer k.Close()
 	if v, _, err := k.GetIntegerValue("B"); err != nil || v != 1 {
 		t.Fatalf("B after revert = %d (err %v), want 1", v, err)
+	}
+}
+
+func TestRevertRestoresCapturedSnapshot(t *testing.T) {
+	cleanup(t)
+	eng := &Engine{Appx: &appx.Service{}}
+	op := reg.Op{Hive: "HKCU", Path: testPath, Name: "Consent", Value: 0, Revert: "set:1"}
+	fix := catalog.Fix{ID: "test-consent", Kind: catalog.Switch, Reg: []reg.Op{op}}
+
+	// The user's real prior state: the value did not exist at all.
+	snaps, err := eng.Capture(fix)
+	if err != nil {
+		t.Fatalf("Capture: %v", err)
+	}
+	if err := eng.Apply(fix, false); err != nil {
+		t.Fatalf("Apply: %v", err)
+	}
+	// Reverting with the snapshot must delete the value (restore absence),
+	// NOT write the static default of 1, which would flip a consent
+	// setting on that the user never had.
+	if err := eng.Revert(fix, snaps); err != nil {
+		t.Fatalf("Revert: %v", err)
+	}
+	k, err := registry.OpenKey(registry.CURRENT_USER, testPath, registry.QUERY_VALUE)
+	if err == nil {
+		if _, _, e := k.GetIntegerValue("Consent"); e == nil {
+			t.Fatal("snapshot revert should have deleted the value, but it exists")
+		}
+		k.Close()
 	}
 }
 
@@ -104,7 +133,7 @@ func TestRevertRefusesAppRemovals(t *testing.T) {
 	cleanup(t)
 	eng := &Engine{Appx: &appx.Service{}}
 	fix := catalog.Fix{ID: "test-app", Kind: catalog.AppMight, Appx: []string{"Fake.App"}}
-	if err := eng.Revert(fix); err == nil {
+	if err := eng.Revert(fix, nil); err == nil {
 		t.Fatal("reverting an app removal must error; the Store reinstalls apps")
 	}
 }

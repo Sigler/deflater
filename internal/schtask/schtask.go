@@ -11,7 +11,6 @@ package schtask
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 	"unicode/utf16"
@@ -84,25 +83,34 @@ func buildTaskXML(user, exePath string) string {
 func Install(exePath string) error {
 	xml := buildTaskXML(currentUser(), exePath)
 
-	// Task Scheduler expects task XML files in UTF-16 LE.
-	tmp := filepath.Join(os.TempDir(), "deflater-task.xml")
-	if err := os.WriteFile(tmp, utf16LE(xml), 0o644); err != nil {
+	// Task Scheduler expects task XML files in UTF-16 LE. A uniquely-named
+	// temp file avoids a predictable path a local attacker could swap
+	// between our write and schtasks reading it.
+	f, err := os.CreateTemp("", "deflater-task-*.xml")
+	if err != nil {
 		return err
 	}
+	tmp := f.Name()
+	f.Close()
 	defer os.Remove(tmp)
+	if err := os.WriteFile(tmp, utf16LE(xml), 0o600); err != nil {
+		return err
+	}
 
-	_, err := psrun.Run(fmt.Sprintf(
+	_, err = psrun.Run(fmt.Sprintf(
 		`schtasks.exe /Create /F /TN "%s" /XML "%s"`, TaskName, tmp), 60*time.Second)
 	return err
 }
 
-// Uninstall removes the task. Removing a task that does not exist is fine.
+// Uninstall removes the task. Removing a task that does not exist is fine;
+// this is decided by querying first, so it works on any UI language
+// rather than matching an English error string.
 func Uninstall() error {
-	out, err := psrun.Run(fmt.Sprintf(`schtasks.exe /Delete /F /TN "%s"`, TaskName), 60*time.Second)
-	if err != nil && !strings.Contains(out, "ERROR: The system cannot find the file") {
-		return err
+	if !IsInstalled() {
+		return nil
 	}
-	return nil
+	_, err := psrun.Run(fmt.Sprintf(`schtasks.exe /Delete /F /TN "%s"`, TaskName), 60*time.Second)
+	return err
 }
 
 // IsInstalled reports whether the task exists.

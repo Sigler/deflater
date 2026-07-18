@@ -8,6 +8,7 @@ package appx
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -15,50 +16,67 @@ import (
 	"deflater/internal/psrun"
 )
 
+// packageName bounds what may be interpolated into a PowerShell command:
+// the Appx identity charset. Anything else is rejected before it can
+// reach the shell.
+var packageName = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9.\-_]*$`)
+
 // Service caches the installed package list because enumerating it costs
-// a second or two and the UI asks for many statuses at once.
+// a second or two and the UI asks for many statuses at once. The cache
+// map is treated as immutable once built: mutations swap in a new map,
+// so a caller holding a returned reference always sees a stable snapshot
+// (no concurrent read/write panics).
 type Service struct {
 	mu        sync.Mutex
 	installed map[string]bool
+	attempted bool  // enumeration has been tried (success or failure)
+	loadErr   error // remembered so a slow failure is not retried per fix
 }
 
 // Installed returns the set of installed (non-framework) package names,
-// loading it on first use.
+// enumerating once and then serving from cache. A failed enumeration is
+// remembered and returned immediately rather than retried on every call,
+// so a slow PowerShell failure cannot stack dozens of 90s timeouts. The
+// returned map must not be mutated by the caller.
 func (s *Service) Installed() (map[string]bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.installed == nil {
-		if err := s.refreshLocked(); err != nil {
-			return nil, err
-		}
+	if !s.attempted {
+		s.refreshLocked()
 	}
-	return s.installed, nil
+	return s.installed, s.loadErr
 }
 
-// Refresh re-reads the installed package list.
+// Refresh forces a fresh enumeration on the next Installed call.
 func (s *Service) Refresh() error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.refreshLocked()
+	s.attempted = false
+	s.mu.Unlock()
+	_, err := s.Installed()
+	return err
 }
 
-func (s *Service) refreshLocked() error {
+func (s *Service) refreshLocked() {
+	s.attempted = true
+	s.installed = map[string]bool{}
+	s.loadErr = nil
 	out, err := psrun.Run(
 		`Get-AppxPackage | Where-Object { -not $_.IsFramework } | Select-Object -ExpandProperty Name | ConvertTo-Json -Compress`,
 		90*time.Second)
 	if err != nil {
-		return err
+		s.loadErr = err
+		return
 	}
 	names, err := parseNames(out)
 	if err != nil {
-		return err
+		s.loadErr = err
+		return
 	}
 	set := make(map[string]bool, len(names))
 	for _, n := range names {
 		set[n] = true
 	}
 	s.installed = set
-	return nil
 }
 
 // parseNames parses ConvertTo-Json output for the package name list: a
@@ -87,6 +105,8 @@ func parseNames(out string) ([]string, error) {
 func (s *Service) Prime(names []string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.attempted = true
+	s.loadErr = nil
 	set := make(map[string]bool, len(names))
 	for _, n := range names {
 		set[n] = true
@@ -96,8 +116,13 @@ func (s *Service) Prime(names []string) {
 
 // Remove uninstalls the package and, when elevated, removes it for all
 // users and deprovisions it so it will not reappear for new accounts or
-// after feature updates.
+// after feature updates. The name is validated against the Appx
+// identity charset before use, so it can never break out of the quoted
+// PowerShell literal.
 func (s *Service) Remove(name string, elevated bool) error {
+	if !packageName.MatchString(name) {
+		return fmt.Errorf("refusing to remove package with unexpected name %q", name)
+	}
 	script := fmt.Sprintf(
 		`$ErrorActionPreference='Stop'; Get-AppxPackage -Name '%[1]s' | Remove-AppxPackage`, name)
 	if elevated {
@@ -108,9 +133,17 @@ func (s *Service) Remove(name string, elevated bool) error {
 	if _, err := psrun.Run(script, 3*time.Minute); err != nil {
 		return err
 	}
+	// Copy-on-write: build a new map without the package and swap it in,
+	// so any goroutine still reading the old map sees a stable snapshot.
 	s.mu.Lock()
 	if s.installed != nil {
-		delete(s.installed, name)
+		next := make(map[string]bool, len(s.installed))
+		for k, v := range s.installed {
+			if k != name {
+				next[k] = v
+			}
+		}
+		s.installed = next
 	}
 	s.mu.Unlock()
 	return nil

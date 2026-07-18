@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -67,6 +68,21 @@ func (e *Engine) Status(f catalog.Fix) (string, error) {
 	}
 }
 
+// Capture records the pre-apply state of a fix's registry values so a
+// later revert can restore exactly what the user had. Callers store this
+// the first time a fix is applied and pass it back to Revert.
+func (e *Engine) Capture(f catalog.Fix) ([]reg.Snapshot, error) {
+	snaps := make([]reg.Snapshot, 0, len(f.Reg))
+	for _, op := range f.Reg {
+		s, err := reg.Capture(op)
+		if err != nil {
+			return nil, err
+		}
+		snaps = append(snaps, s)
+	}
+	return snaps, nil
+}
+
 // Apply puts the fix in effect. Elevated affects whether app removals
 // can also be deprovisioned (blocked from returning for new accounts).
 func (e *Engine) Apply(f catalog.Fix, elevated bool) error {
@@ -96,48 +112,78 @@ func (e *Engine) Apply(f catalog.Fix, elevated bool) error {
 	return nil
 }
 
-// Revert undoes a switch. App removals cannot be undone here; the Store
-// reinstalls them, and the UI says so.
-func (e *Engine) Revert(f catalog.Fix) error {
+// Revert undoes a switch. When snapshots are provided (recorded at
+// apply time) it restores the user's exact prior state; otherwise it
+// falls back to the catalog's static revert. App removals cannot be
+// undone here; the Store reinstalls them, and the UI says so.
+func (e *Engine) Revert(f catalog.Fix, snapshots []reg.Snapshot) error {
 	if f.Kind == catalog.AppJunk || f.Kind == catalog.AppMight {
 		return fmt.Errorf("%s: app removals are reverted by reinstalling from the Microsoft Store", f.ID)
+	}
+	if len(snapshots) == len(f.Reg) && len(snapshots) > 0 {
+		for _, s := range snapshots {
+			if err := reg.Restore(s); err != nil {
+				return err
+			}
+		}
+		logging.Logf("reverted %s (restored snapshot)", f.ID)
+		return nil
 	}
 	for _, op := range f.Reg {
 		if err := reg.Undo(op); err != nil {
 			return err
 		}
 	}
-	logging.Logf("reverted %s", f.ID)
+	logging.Logf("reverted %s (static default)", f.ID)
 	return nil
 }
 
 // uninstallOneDrive stops the sync client and runs Microsoft's own
 // uninstaller. Files in OneDrive's cloud are untouched; this removes
-// only the local client. On 24H2 OneDrive installs per-user, so the
-// user's own uninstall command is preferred, with the classic machine
-// installer as fallback.
+// only the local client. The uninstaller path is located from known
+// system locations and the registered uninstall command, but is always
+// validated to be a OneDriveSetup.exe that exists before running, and
+// is launched with a normal argument (never a shell), so a tampered
+// HKCU uninstall string cannot inject a command.
 func uninstallOneDrive() error {
 	kill := exec.Command("taskkill.exe", "/IM", "OneDrive.exe", "/F")
 	kill.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
 	_ = kill.Run() // fine if it was not running
 
-	if cmdLine := oneDriveUninstallString(); cmdLine != "" {
-		return runCommandLine(cmdLine)
+	setup := findOneDriveSetup()
+	if setup == "" {
+		return nil // already gone
 	}
-	for _, c := range []string{
-		filepath.Join(os.Getenv("SystemRoot"), "System32", "OneDriveSetup.exe"),
-		filepath.Join(os.Getenv("SystemRoot"), "SysWOW64", "OneDriveSetup.exe"),
-	} {
-		if _, err := os.Stat(c); err == nil {
-			return runCommandLine(`"` + c + `" /uninstall`)
-		}
-	}
-	return nil // already gone
+	return runUninstaller(setup)
 }
 
-// oneDriveUninstallString reads the per-user uninstall command Windows
-// itself registered for OneDrive, if present.
-func oneDriveUninstallString() string {
+// findOneDriveSetup returns a trusted path to OneDriveSetup.exe, or "".
+// It checks the fixed system locations first, then the executable named
+// by the registered uninstall command, but only accepts a path whose
+// base name is OneDriveSetup.exe and which exists on disk.
+func findOneDriveSetup() string {
+	candidates := []string{
+		filepath.Join(os.Getenv("SystemRoot"), "System32", "OneDriveSetup.exe"),
+		filepath.Join(os.Getenv("SystemRoot"), "SysWOW64", "OneDriveSetup.exe"),
+	}
+	if p := oneDriveSetupFromRegistry(); p != "" {
+		candidates = append(candidates, p)
+	}
+	for _, c := range candidates {
+		if !strings.EqualFold(filepath.Base(c), "OneDriveSetup.exe") {
+			continue
+		}
+		if info, err := os.Stat(c); err == nil && !info.IsDir() {
+			return c
+		}
+	}
+	return ""
+}
+
+// oneDriveSetupFromRegistry extracts just the executable path from the
+// per-user uninstall command Windows registered, discarding any
+// arguments. The value is treated as untrusted input.
+func oneDriveSetupFromRegistry() string {
 	k, err := registry.OpenKey(registry.CURRENT_USER,
 		`Software\Microsoft\Windows\CurrentVersion\Uninstall\OneDriveSetup.exe`, registry.QUERY_VALUE)
 	if err != nil {
@@ -148,16 +194,26 @@ func oneDriveUninstallString() string {
 	if err != nil {
 		return ""
 	}
+	s = strings.TrimSpace(s)
+	// A quoted path: take what's inside the quotes.
+	if strings.HasPrefix(s, `"`) {
+		if end := strings.Index(s[1:], `"`); end >= 0 {
+			return s[1 : 1+end]
+		}
+		return ""
+	}
+	// Unquoted: the exe path ends at ".exe"; drop any trailing args.
+	if i := strings.Index(strings.ToLower(s), ".exe"); i >= 0 {
+		return s[:i+4]
+	}
 	return s
 }
 
-func runCommandLine(cmdLine string) error {
-	cmd := exec.Command("cmd.exe")
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		HideWindow:    true,
-		CreationFlags: 0x08000000,
-		CmdLine:       `cmd.exe /C "` + cmdLine + `"`,
-	}
+// runUninstaller launches OneDriveSetup.exe /uninstall with normal argv
+// (no shell), killing the setup process if it overruns.
+func runUninstaller(setup string) error {
+	cmd := exec.Command(setup, "/uninstall")
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true, CreationFlags: 0x08000000}
 	if err := cmd.Start(); err != nil {
 		return err
 	}

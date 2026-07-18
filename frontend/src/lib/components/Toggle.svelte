@@ -41,8 +41,10 @@
     border-radius: 999px;
     border: none;
     background: linear-gradient(150deg, rgba(0, 0, 0, 0.42), rgba(0, 0, 0, 0.18));
+    /* A visible rim (≥3:1 against the card) so the control boundary is
+     * discernible, not carried by shadow alone. */
     box-shadow:
-      inset 0 0 0 1px rgba(0, 0, 0, 0.55),
+      inset 0 0 0 1px rgba(150, 165, 190, 0.4),
       inset 2px 3px 5px rgba(0, 0, 0, 0.48),
       inset -1px -2px 3px rgba(214, 228, 255, 0.05),
       1px 2px 3px rgba(214, 228, 255, 0.05);

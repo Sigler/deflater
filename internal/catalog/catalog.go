@@ -20,7 +20,11 @@
 // be added without touching Go.
 package catalog
 
-import "deflater/internal/reg"
+import (
+	"fmt"
+
+	"deflater/internal/reg"
+)
 
 // Kind describes how a fix operates.
 type Kind string
@@ -72,13 +76,11 @@ func pol(hive, path, name string, value uint32) reg.Op {
 }
 
 // tog is a Settings-backed toggle with a known default: revert restores
-// the default explicitly so the Settings UI reads correctly again.
+// the default explicitly so the Settings UI reads correctly again. (When
+// a value was captured at apply time the engine restores that instead,
+// which is more accurate; this static default is the fallback.)
 func tog(hive, path, name string, value, defaultValue uint32) reg.Op {
-	revert := "set:1"
-	if defaultValue == 0 {
-		revert = "set:0"
-	}
-	return reg.Op{Hive: hive, Path: path, Name: name, Value: value, Revert: revert}
+	return reg.Op{Hive: hive, Path: path, Name: name, Value: value, Revert: fmt.Sprintf("set:%d", defaultValue)}
 }
 
 const (
@@ -226,12 +228,21 @@ func Fixes() []Fix {
 			ID: "app-copilot", Category: "copilot-ai", Kind: AppMight, Caution: true, Profiles: sweep(), Appx: []string{"Microsoft.Copilot"},
 		},
 		{
-			// AllowRecallEnablement=0 removes the Recall component and
-			// deletes existing snapshots (by design); needs a restart.
+			// Stops Recall from saving new snapshots. Harmless and fully
+			// reversible, so it stays in every profile.
 			ID: "recall-off", Category: "copilot-ai", Kind: Switch, Profiles: all(),
 			Reg: []reg.Op{
 				pol("HKLM", windowsAI, "DisableAIDataAnalysis", 1),
 				pol("HKCU", `Software\Policies\Microsoft\Windows\WindowsAI`, "DisableAIDataAnalysis", 1),
+			},
+		},
+		{
+			// AllowRecallEnablement=0 removes the Recall component AND
+			// permanently deletes any existing snapshots. That data loss
+			// is why this is a separate, caution-flagged fix kept out of
+			// Light Touch, unlike the reversible snapshot pause above.
+			ID: "recall-purge", Category: "copilot-ai", Kind: Switch, Caution: true, Profiles: sweep(),
+			Reg: []reg.Op{
 				pol("HKLM", windowsAI, "AllowRecallEnablement", 0),
 			},
 		},

@@ -40,6 +40,11 @@ func main() {
 		OnStartup:        app.startup,
 		OnBeforeClose:    app.beforeClose,
 		Bind:             []any{app},
+		// One window at a time: a second launch focuses the first, so two
+		// instances can never race on config or double-apply.
+		SingleInstanceLock: &options.SingleInstanceLock{
+			UniqueId: "deflater-single-instance",
+		},
 		Windows: &windows.Options{
 			Theme: windows.Dark,
 		},

@@ -13,11 +13,15 @@
   } = $props();
 
   let removing = $state<string | null>(null);
+  let error = $state("");
 
   async function remove(pkg: string) {
     removing = pkg;
+    error = "";
     try {
       await onremove(pkg);
+    } catch (e) {
+      error = `${pkg}: ${e}`;
     } finally {
       removing = null;
     }
@@ -39,6 +43,7 @@
             type="button"
             class="remove"
             disabled={removing !== null}
+            aria-label={`${S.alerts.remove} ${alert.package}`}
             onclick={() => remove(alert.package)}
           >
             {removing === alert.package ? S.alerts.removing : S.alerts.remove}
@@ -46,6 +51,7 @@
         </li>
       {/each}
     </ul>
+    {#if error}<p class="err">{error}</p>{/if}
   </div>
 {/if}
 
@@ -77,6 +83,9 @@
   p {
     font-size: 12.5px;
     color: var(--text-dim);
+  }
+  .err {
+    color: var(--coral-bright);
   }
   ul {
     list-style: none;

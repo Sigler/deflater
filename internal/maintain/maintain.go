@@ -44,8 +44,21 @@ func Run() int {
 	cfg := config.Load()
 	logging.Logf("maintenance: start (elevated=%v, maintenance=%v, watcher=%v)",
 		d.elevated, cfg.Maintenance, cfg.WatcherEnabled)
+	before := len(cfg.Alerts)
 	n := run(&cfg, d)
-	if err := config.Save(cfg); err != nil {
+
+	// The long work above ran against a loaded copy. Persist only the two
+	// fields maintenance owns — the fresh snapshot and any newly-found
+	// alerts — under the lock, so a GUI change made meanwhile survives.
+	newAlerts := append([]config.Alert(nil), cfg.Alerts[before:]...)
+	snapshot := cfg.Snapshot
+	if err := config.Update(func(c *config.Config) error {
+		c.Snapshot = snapshot
+		for _, al := range newAlerts {
+			c.AddAlert(al.Package)
+		}
+		return nil
+	}); err != nil {
 		logging.Logf("maintenance: save config failed: %v", err)
 	}
 	logging.Logf("maintenance: done, re-applied %d", n)

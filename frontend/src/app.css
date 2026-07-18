@@ -14,10 +14,11 @@
   --stroke: rgba(214, 228, 255, 0.08);
   --stroke-strong: rgba(214, 228, 255, 0.16);
 
-  /* Ink */
+  /* Ink. Faint still passes AA (4.5:1) on the panel surface for the
+     small text that uses it. */
   --text: #e4e9f2;
-  --text-dim: #97a1b5;
-  --text-faint: #6e7889;
+  --text-dim: #aab3c4;
+  --text-faint: #8b94a6;
 
   /* Brand */
   --coral: #e56a4d;

@@ -15,11 +15,13 @@
   import type { FixResult, Report } from "./lib/types";
 
   let report = $state<Report | null>(null);
+  let loadError = $state("");
   let selection = $state(new SvelteSet<string>());
   let applying = $state(false);
   let progressText = $state("");
   let showElevateModal = $state(false);
   let doneMessage = $state("");
+  let doneWarn = $state(false);
   let failures = $state<FixResult[]>([]);
   let maintenancePendingElevation = $state(false);
   let watcherPendingElevation = $state(false);
@@ -64,9 +66,11 @@
       const el = document.getElementById(`sec-${item.id}`);
       if (el && el.offsetTop <= y) current = item.id;
     }
-    // At the end of the scroll the last section may never reach the
-    // spy line; scrolled to the bottom means the last section is it.
-    if (scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 8) {
+    // At the end of a real scroll the last section may never reach the
+    // spy line; scrolled to the bottom means the last section is active.
+    // Only when there is actually something to scroll.
+    const scrollable = scroller.scrollHeight > scroller.clientHeight + 8;
+    if (scrollable && scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 8) {
       current = navItems[navItems.length - 1].id;
     }
     activeSection = current;
@@ -85,18 +89,28 @@
   }
 
   async function load() {
-    const r = await api.getReport();
-    report = r;
-    selection = new SvelteSet(initialSelection(r.fixes, r.managed));
-    // An apply was waiting on admin rights and we now have them: resume.
-    if (r.pending && r.elevated) {
-      progressText = S.apply.resuming;
-      await runApply(r.pending.enable, r.pending.disable);
+    loadError = "";
+    try {
+      const r = await api.getReport();
+      report = r;
+      selection = new SvelteSet(initialSelection(r.fixes, r.managed));
+      // If we were relaunched elevated to finish a staged apply, claim it
+      // (consume-on-read, so it can never fire twice) and run it.
+      const pending = await api.takePending();
+      if (pending) {
+        progressText = S.apply.resuming;
+        await runApply(pending.enable, pending.disable);
+      }
+    } catch (e) {
+      loadError = `${e}`;
     }
   }
 
+  // Progress events carry a phase: "start" fires before a fix's work, so
+  // the label names the fix actually being worked on (not the last one).
   api.onApplyProgress((raw) => {
     const res = raw as FixResult;
+    if (res.phase !== "start") return;
     const title = S.fixes[res.id as keyof typeof S.fixes]?.title ?? res.id;
     progressText = `${S.apply.applying} ${title}`;
   });
@@ -104,6 +118,7 @@
   async function runApply(enable: string[], disable: string[]) {
     applying = true;
     doneMessage = "";
+    doneWarn = false;
     failures = [];
     try {
       const outcome = await api.apply(enable, disable);
@@ -113,12 +128,25 @@
       }
       const failed = (outcome.results ?? []).filter((r) => !r.ok);
       failures = failed;
-      doneMessage = failed.length > 0 ? S.apply.doneSomeFailed(failed.length) : S.apply.doneBody;
+      if (outcome.saveWarning) {
+        doneWarn = true;
+        doneMessage = S.apply.saveWarning;
+      } else {
+        doneWarn = failed.length > 0;
+        doneMessage = failed.length > 0 ? S.apply.doneSomeFailed(failed.length) : S.apply.doneBody;
+      }
       const r = await api.getReport();
       report = r;
-      selection = new SvelteSet(initialSelection(r.fixes, r.managed));
+      // Reflect reality, but keep failed enables selected so the user can
+      // retry them without hunting each one down again.
+      const next = initialSelection(r.fixes, r.managed);
+      for (const f of failed) if (enable.includes(f.id)) next.add(f.id);
+      selection = new SvelteSet(next);
       maintenancePendingElevation = false;
       watcherPendingElevation = false;
+    } catch (e) {
+      doneWarn = true;
+      doneMessage = `${S.apply.applyError} ${e}`;
     } finally {
       applying = false;
       progressText = "";
@@ -132,11 +160,19 @@
   async function confirmElevate() {
     showElevateModal = false;
     try {
-      await api.saveAndElevate(changes.enable, changes.disable);
+      // Snapshot the change set the modal described, so a background
+      // toggle can't alter what gets elevated.
+      await api.saveAndElevate([...elevateSnapshot.enable], [...elevateSnapshot.disable]);
     } catch {
       // UAC declined; nothing was changed and nothing stays queued.
     }
   }
+
+  // The change set captured when the elevate modal opened.
+  let elevateSnapshot = $state<{ enable: string[]; disable: string[] }>({ enable: [], disable: [] });
+  $effect(() => {
+    if (showElevateModal) elevateSnapshot = { enable: changes.enable, disable: changes.disable };
+  });
 
   function reset() {
     if (report) selection = new SvelteSet(initialSelection(report.fixes, report.managed));
@@ -153,15 +189,29 @@
   async function setMaintenance(on: boolean) {
     if (!report) return;
     report.maintenance = on;
-    const applied = await api.setMaintenance(on);
-    maintenancePendingElevation = on && !applied;
+    try {
+      const res = await api.setMaintenance(on);
+      maintenancePendingElevation = res.needsElevation;
+    } catch (e) {
+      report.maintenance = !on; // roll the toggle back to reality
+      maintenancePendingElevation = false;
+      doneWarn = true;
+      doneMessage = `${e}`;
+    }
   }
 
   async function setWatcher(on: boolean) {
     if (!report) return;
     report.watcher = on;
-    const applied = await api.setWatcher(on);
-    watcherPendingElevation = on && !applied;
+    try {
+      const res = await api.setWatcher(on);
+      watcherPendingElevation = res.needsElevation;
+    } catch (e) {
+      report.watcher = !on;
+      watcherPendingElevation = false;
+      doneWarn = true;
+      doneMessage = `${e}`;
+    }
   }
 
   async function removeAlertPackage(pkg: string) {
@@ -180,9 +230,15 @@
 {#if report === null}
   <div class="loading">
     <img class="loading-mascot" src={mascot} alt="" draggable="false" />
-    <div class="spinner" aria-hidden="true"></div>
-    <p>{S.app.loading}</p>
-    <p class="hint">{S.app.loadingHint}</p>
+    {#if loadError}
+      <p>{S.app.loadFailed}</p>
+      <p class="hint">{loadError}</p>
+      <button type="button" class="primary" onclick={() => load()}>{S.app.retry}</button>
+    {:else}
+      <div class="spinner" aria-hidden="true"></div>
+      <p>{S.app.loading}</p>
+      <p class="hint">{S.app.loadingHint}</p>
+    {/if}
   </div>
 {:else}
   <div class="page" bind:this={scroller} onscroll={updateActive}>
@@ -198,13 +254,19 @@
           ondismiss={dismissAlerts}
         />
 
+        {#if report.taskMismatch}
+          <div class="done warn">
+            <p>{S.maintenance.mismatch}</p>
+          </div>
+        {/if}
+
         {#if doneMessage}
-          <div class="done" class:warn={failures.length > 0}>
+          <div class="done" class:warn={doneWarn}>
             <p>{doneMessage}</p>
             {#each failures as f (f.id)}
               <p class="fail">{S.fixes[f.id as keyof typeof S.fixes]?.title ?? f.id}: {f.error}</p>
             {/each}
-            {#if failures.length === 0 && !report.maintenance}
+            {#if !doneWarn && failures.length === 0 && !report.maintenance}
               <p class="tip">{S.apply.doneMaintenanceTip}</p>
             {/if}
           </div>
@@ -223,6 +285,7 @@
             fixes={byCategory(cat)}
             {selection}
             pending={pendingIds}
+            {applying}
             ontoggle={toggleFix}
           />
         {/each}
@@ -257,7 +320,7 @@
 {/if}
 
 {#if showElevateModal}
-  <Modal title={S.apply.elevateTitle}>
+  <Modal title={S.apply.elevateTitle} oncancel={() => (showElevateModal = false)}>
     {#snippet children()}
       <p>{S.apply.elevateBody}</p>
     {/snippet}

@@ -8,12 +8,14 @@
     fixes,
     selection,
     pending,
+    applying,
     ontoggle,
   }: {
     id: string;
     fixes: FixState[];
     selection: Set<string>;
     pending: Set<string>;
+    applying: boolean;
     ontoggle: (id: string, value: boolean) => void;
   } = $props();
 
@@ -30,7 +32,13 @@
     </header>
     <div class="list">
       {#each fixes as fix (fix.id)}
-        <FixRow {fix} selected={selection.has(fix.id)} pending={pending.has(fix.id)} {ontoggle} />
+        <FixRow
+          {fix}
+          selected={selection.has(fix.id)}
+          pending={pending.has(fix.id)}
+          {applying}
+          {ontoggle}
+        />
       {/each}
     </div>
   </section>

@@ -37,3 +37,7 @@ export function SetMaintenance(arg1) {
 export function SetWatcher(arg1) {
   return window['go']['main']['App']['SetWatcher'](arg1);
 }
+
+export function TakePending() {
+  return window['go']['main']['App']['TakePending']();
+}

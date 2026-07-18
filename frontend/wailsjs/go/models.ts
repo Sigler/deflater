@@ -17,6 +17,8 @@ export namespace config {
 	export class Pending {
 	    enable: string[];
 	    disable: string[];
+	    token: string;
+	    created: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Pending(source);
@@ -26,6 +28,8 @@ export namespace config {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.enable = source["enable"];
 	        this.disable = source["disable"];
+	        this.token = source["token"];
+	        this.created = source["created"];
 	    }
 	}
 
@@ -38,6 +42,7 @@ export namespace main {
 	    ok: boolean;
 	    error?: string;
 	    status: string;
+	    phase: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new FixResult(source);
@@ -49,11 +54,13 @@ export namespace main {
 	        this.ok = source["ok"];
 	        this.error = source["error"];
 	        this.status = source["status"];
+	        this.phase = source["phase"];
 	    }
 	}
 	export class ApplyOutcome {
 	    needsElevation: boolean;
 	    results: FixResult[];
+	    saveWarning?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ApplyOutcome(source);
@@ -63,6 +70,7 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.needsElevation = source["needsElevation"];
 	        this.results = this.convertValues(source["results"], FixResult);
+	        this.saveWarning = source["saveWarning"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -158,6 +166,7 @@ export namespace main {
 	    maintenance: boolean;
 	    watcher: boolean;
 	    alerts: config.Alert[];
+	    taskMismatch: boolean;
 	    pending?: config.Pending;
 	
 	    static createFrom(source: any = {}) {
@@ -174,6 +183,7 @@ export namespace main {
 	        this.maintenance = source["maintenance"];
 	        this.watcher = source["watcher"];
 	        this.alerts = this.convertValues(source["alerts"], config.Alert);
+	        this.taskMismatch = source["taskMismatch"];
 	        this.pending = this.convertValues(source["pending"], config.Pending);
 	    }
 	
@@ -194,6 +204,20 @@ export namespace main {
 		    }
 		    return a;
 		}
+	}
+	export class ToggleResult {
+	    saved: boolean;
+	    needsElevation: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ToggleResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.saved = source["saved"];
+	        this.needsElevation = source["needsElevation"];
+	    }
 	}
 
 }

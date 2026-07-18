@@ -21,6 +21,8 @@ export const en = {
     scanApplied: (n: number, total: number) => `${n} of ${total} applied`,
     loading: "Reading your system…",
     loadingHint: "Checking every switch and installed app. This takes a few seconds.",
+    loadFailed: "Couldn't read your system.",
+    retry: "Try again",
   },
 
   profiles: {
@@ -126,6 +128,9 @@ export const en = {
       n === 1
         ? "1 change did not apply. Details below."
         : `${n} changes did not apply. Details below.`,
+    saveWarning:
+      "Your changes were applied, but Deflater couldn't save a record of them. Maintenance may not track them. Details are in the logs.",
+    applyError: "Something went wrong applying your changes:",
     elevateTitle: "Windows will ask for permission",
     elevateBody:
       "These changes need administrator rights. Deflater will reopen with the standard Windows prompt, then continue right where you left off.",
@@ -136,6 +141,8 @@ export const en = {
 
   maintenance: {
     sectionBlurb: "Keep your choices applied, and get warned when apps sneak in.",
+    mismatch:
+      "Automatic maintenance is set to on, but its scheduled task isn't registered. Apply any change while allowing the Windows permission prompt to set it up.",
     title: "Keep it fixed automatically",
     body: "Windows updates love to bring junk back. Deflater can quietly re-check after every sign-in and once a week, and re-apply your choices when something drifts.",
     on: "On",
@@ -321,10 +328,16 @@ export const en = {
     "recall-off": {
       title: "Block Recall screen snapshots",
       summary: "Stops Windows taking searchable screenshots of what you do.",
-      what: "Sets the policies that turn off Recall's snapshot saving and block the feature from being enabled. On PCs where Recall was active, existing snapshots are deleted by Windows as part of switching it off, and a restart completes it. On PCs without Recall this simply locks the door in advance.",
+      what: "Turns off Recall's snapshot saving. Fully reversible, and it keeps any snapshots already on the PC. On PCs without Recall it simply locks the door in advance.",
+      undo: "Flip the toggle off and apply. Recall can save snapshots again.",
+    },
+    "recall-purge": {
+      title: "Remove Recall and wipe its snapshots",
+      summary: "Removes the Recall component and deletes any snapshots already saved.",
+      what: "Goes further than the switch above: it removes the Recall feature entirely and permanently deletes every snapshot already stored on this PC. A restart completes it.",
       tradeoff:
-        "If you deliberately use Recall to find things you have seen, this erases its memory.",
-      undo: "Flip the toggle off and apply. Recall becomes available again; past snapshots are gone.",
+        "This deletes data. If you deliberately use Recall to find things you have seen, its entire memory is erased and cannot be recovered.",
+      undo: "Flip the toggle off and apply to allow Recall again, but snapshots already deleted are gone for good.",
     },
     "click-to-do-off": {
       title: "Turn off Click to Do",

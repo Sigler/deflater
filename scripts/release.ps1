@@ -19,14 +19,19 @@ if (git status --porcelain) {
 
 # Stamp the version everywhere it lives. WriteAllText with a BOM-less
 # encoding: PowerShell 5.1's Set-Content -Encoding UTF8 writes a BOM,
-# which breaks strict JSON parsers.
+# which breaks strict JSON parsers. Each replace is asserted to actually
+# match, so a renamed field can never silently ship the old version.
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 
-$main = (Get-Content "$root\main.go" -Raw) -replace 'const appVersion = "[^"]+"', "const appVersion = `"$Version`""
-[System.IO.File]::WriteAllText("$root\main.go", $main, $utf8)
+function Set-Version($file, $pattern, $replacement) {
+    $before = Get-Content $file -Raw
+    $after = $before -replace $pattern, $replacement
+    if ($after -eq $before) { throw "version stamp did not match anything in $file" }
+    [System.IO.File]::WriteAllText($file, $after, $utf8)
+}
 
-$wails = (Get-Content "$root\wails.json" -Raw) -replace '"productVersion": "[^"]+"', "`"productVersion`": `"$Version`""
-[System.IO.File]::WriteAllText("$root\wails.json", $wails, $utf8)
+Set-Version "$root\main.go" 'const appVersion = "[^"]+"' "const appVersion = `"$Version`""
+Set-Version "$root\wails.json" '"productVersion": "[^"]+"' "`"productVersion`": `"$Version`""
 
 git add main.go wails.json
 git commit -m "Release v$Version"
