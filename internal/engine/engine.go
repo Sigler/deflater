@@ -35,7 +35,7 @@ type Engine struct {
 // Status reports the live state of a fix on this machine.
 func (e *Engine) Status(f catalog.Fix) (string, error) {
 	switch f.Kind {
-	case catalog.Switch, catalog.OneDrive:
+	case catalog.Switch:
 		set := 0
 		for _, op := range f.Reg {
 			ok, err := reg.IsSet(op)
@@ -54,6 +54,13 @@ func (e *Engine) Status(f catalog.Fix) (string, error) {
 		default:
 			return StatusPartial, nil
 		}
+	case catalog.OneDrive:
+		// The uninstall fix has no registry state of its own; its status is
+		// simply whether the OneDrive client is still installed.
+		if oneDriveInstalled() {
+			return StatusInstalled, nil
+		}
+		return StatusRemoved, nil
 	default: // app removals
 		installed, err := e.Appx.Installed()
 		if err != nil {
@@ -120,6 +127,9 @@ func (e *Engine) Revert(f catalog.Fix, snapshots []reg.Snapshot) error {
 	if f.Kind == catalog.AppJunk || f.Kind == catalog.AppMight {
 		return fmt.Errorf("%s: app removals are reverted by reinstalling from the Microsoft Store", f.ID)
 	}
+	if f.Kind == catalog.OneDrive {
+		return fmt.Errorf("%s: a OneDrive uninstall is reversed by reinstalling it from microsoft.com/onedrive", f.ID)
+	}
 	if len(snapshots) == len(f.Reg) && len(snapshots) > 0 {
 		for _, s := range snapshots {
 			if err := reg.Restore(s); err != nil {
@@ -136,6 +146,24 @@ func (e *Engine) Revert(f catalog.Fix, snapshots []reg.Snapshot) error {
 	}
 	logging.Logf("reverted %s (static default)", f.ID)
 	return nil
+}
+
+// oneDriveInstalled reports whether the OneDrive client is present, by
+// looking for OneDrive.exe in its known per-user and per-machine install
+// locations. (System32\OneDriveSetup.exe is the installer stub shipped
+// with Windows and is deliberately not treated as "installed".)
+func oneDriveInstalled() bool {
+	candidates := []string{
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "Microsoft", "OneDrive", "OneDrive.exe"),
+		filepath.Join(os.Getenv("ProgramFiles"), "Microsoft OneDrive", "OneDrive.exe"),
+		filepath.Join(os.Getenv("ProgramFiles(x86)"), "Microsoft OneDrive", "OneDrive.exe"),
+	}
+	for _, c := range candidates {
+		if info, err := os.Stat(c); err == nil && !info.IsDir() {
+			return true
+		}
+	}
+	return false
 }
 
 // uninstallOneDrive stops the sync client and runs Microsoft's own

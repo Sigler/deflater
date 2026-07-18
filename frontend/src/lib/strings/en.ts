@@ -112,6 +112,7 @@ export const en = {
     undoApp: "Reinstall it from the Microsoft Store any time, free.",
     reinstall: "Reinstall",
     reinstallHint: "Opens the Microsoft Store",
+    reinstallWebHint: "Opens microsoft.com/onedrive",
     partialNote:
       "Part of this fix is already set on this PC, most likely by another tool or an older script. Applying it completes the rest.",
   },
@@ -421,13 +422,21 @@ export const en = {
     },
 
     // ---- Apps you might use --------------------------------------------
-    "app-onedrive": {
-      title: "Uninstall OneDrive",
-      summary: "Uninstalls the OneDrive sync app and stops its sign-in nags.",
-      what: "Runs Microsoft's own OneDrive uninstaller and sets the policy that keeps it from running. Files already on this PC stay where they are, and everything in the cloud stays at onedrive.com. Nothing is deleted.",
+    "onedrive-block": {
+      title: "Turn off OneDrive",
+      summary: "Stops OneDrive running, syncing, and nagging, but leaves it installed.",
+      what: "Sets the policy that keeps OneDrive from starting. The app stays installed, so you can turn it back on any time, but it stops syncing and stops the sign-in prompts. Files already on this PC stay where they are, and everything in the cloud stays at onedrive.com.",
       tradeoff:
-        "Syncing and cloud backup stop. If you rely on OneDrive for backup or shared folders, keep it. Files stored online-only need downloading from onedrive.com first.",
-      undo: "Flip the toggle off and apply to lift the block, then reinstall OneDrive from microsoft.com/onedrive.",
+        "Syncing and cloud backup stop while this is on. If you rely on OneDrive for backup or shared folders, leave it off. Files stored online-only need downloading from onedrive.com first.",
+      undo: "Flip the toggle off and apply. OneDrive is allowed to run again.",
+    },
+    "onedrive-uninstall": {
+      title: "Also uninstall it",
+      summary: "Removes the OneDrive app entirely, using Microsoft's own uninstaller.",
+      what: "Runs Microsoft's own OneDrive uninstaller to remove the local client. Your files on this PC and everything in the cloud are untouched, nothing is deleted. This goes further than turning it off, so it's a separate choice.",
+      tradeoff:
+        "Removing it is more than turning it off. You'd reinstall from microsoft.com/onedrive to use OneDrive again.",
+      undo: "Reinstall OneDrive from microsoft.com/onedrive any time.",
     },
     "app-phonelink": {
       title: "Uninstall Phone Link",

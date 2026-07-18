@@ -126,6 +126,8 @@ export namespace main {
 	    appx?: string[];
 	    status: string;
 	    refresh: string;
+	    group?: string;
+	    primary?: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new FixState(source);
@@ -142,6 +144,8 @@ export namespace main {
 	        this.appx = source["appx"];
 	        this.status = source["status"];
 	        this.refresh = source["refresh"];
+	        this.group = source["group"];
+	        this.primary = source["primary"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

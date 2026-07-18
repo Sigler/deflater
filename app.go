@@ -79,6 +79,10 @@ type FixState struct {
 	// Refresh is the lightest action that makes this fix take effect
 	// (none/explorer/signout/reboot), so the UI can say so per fix.
 	Refresh string `json:"refresh"`
+	// Group and Primary cluster related fixes into one card (e.g. block
+	// OneDrive vs also uninstall it). Empty Group means a standalone fix.
+	Group   string `json:"group,omitempty"`
+	Primary bool   `json:"primary,omitempty"`
 }
 
 // Report is everything the UI needs to render.
@@ -147,6 +151,8 @@ func (a *App) GetReport() (Report, error) {
 			Appx:     f.Appx,
 			Status:   status,
 			Refresh:  string(f.RefreshNeeded()),
+			Group:    f.Group,
+			Primary:  f.Primary,
 		}
 		for _, op := range f.Reg {
 			state.Reg = append(state.Reg, RegOpInfo(op))

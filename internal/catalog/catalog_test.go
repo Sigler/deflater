@@ -47,7 +47,10 @@ func TestCatalogIntegrity(t *testing.T) {
 				t.Errorf("%s: unknown profile %q", f.ID, p)
 			}
 		}
-		if len(f.Reg) == 0 && len(f.Appx) == 0 {
+		// OneDrive fixes may carry no reg/appx: their mechanism is the
+		// built-in uninstaller (onedrive-uninstall) or a policy (onedrive-
+		// block, which does list a reg op).
+		if len(f.Reg) == 0 && len(f.Appx) == 0 && f.Kind != OneDrive {
 			t.Errorf("%s: has no mechanism", f.ID)
 		}
 		switch f.Kind {

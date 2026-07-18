@@ -27,6 +27,8 @@ export interface FixState {
   appx?: string[];
   status: FixStatus;
   refresh: Refresh;
+  group?: string;
+  primary?: boolean;
 }
 
 export interface Alert {

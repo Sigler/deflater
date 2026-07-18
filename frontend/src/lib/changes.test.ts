@@ -50,9 +50,14 @@ describe("computeChanges", () => {
     expect(computeChanges(fixes, new Set()).disable).toEqual([]);
   });
 
-  it("reverts the OneDrive policy when deselected", () => {
-    const fixes = [fix({ id: "od", kind: "onedrive", status: "on" })];
-    expect(computeChanges(fixes, new Set()).disable).toEqual(["od"]);
+  it("never tries to revert a OneDrive uninstall (reinstall is manual)", () => {
+    const fixes = [fix({ id: "onedrive-uninstall", kind: "onedrive", status: "removed" })];
+    expect(computeChanges(fixes, new Set()).disable).toEqual([]);
+  });
+
+  it("reverts the reversible OneDrive block when deselected", () => {
+    const fixes = [fix({ id: "onedrive-block", kind: "switch", status: "on" })];
+    expect(computeChanges(fixes, new Set()).disable).toEqual(["onedrive-block"]);
   });
 
   it("is a no-op when selection matches reality", () => {

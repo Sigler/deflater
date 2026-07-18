@@ -64,6 +64,13 @@ type Fix struct {
 	Profiles []string `json:"profiles"`
 	Reg      []reg.Op `json:"reg,omitempty"`
 	Appx     []string `json:"appx,omitempty"`
+	// Group ties related fixes together in the UI so a bundled action can
+	// be split into independent toggles (e.g. block OneDrive vs also
+	// uninstall it) that share one card. Empty means a standalone fix.
+	Group string `json:"group,omitempty"`
+	// Primary marks the lead fix of a Group; the UI renders it first and
+	// treats the rest as secondary sub-options.
+	Primary bool `json:"primary,omitempty"`
 }
 
 // Refresh is the lightest action that makes a fix visibly take effect.
@@ -373,14 +380,22 @@ func Fixes() []Fix {
 
 		// ---- Apps you might use ------------------------------------------
 		{
-			// Policy blocks OneDrive from running; the engine also runs
-			// Microsoft's own uninstaller. Cloud files are untouched.
-			// Microsoft.OneDriveSync (a sync component, not the app) is
-			// deliberately NOT removed.
-			ID: "app-onedrive", Category: "might-use", Kind: OneDrive, Caution: true, Profiles: full(),
+			// The reversible half: a policy that stops OneDrive running and
+			// nagging, while leaving the app installed. The primary of the
+			// OneDrive group.
+			ID: "onedrive-block", Category: "might-use", Kind: Switch, Caution: true, Profiles: full(),
+			Group: "onedrive", Primary: true,
 			Reg: []reg.Op{
 				pol("HKLM", `SOFTWARE\Policies\Microsoft\Windows\OneDrive`, "DisableFileSyncNGSC", 1),
 			},
+		},
+		{
+			// The drastic half: run Microsoft's own uninstaller. No registry
+			// of its own; a secondary sub-option under onedrive-block. Cloud
+			// files are untouched, and Microsoft.OneDriveSync (a sync
+			// component, not the app) is deliberately NOT removed.
+			ID: "onedrive-uninstall", Category: "might-use", Kind: OneDrive, Caution: true, Profiles: full(),
+			Group: "onedrive",
 		},
 		{
 			// Phone Link and the Cross Device Experience Host travel
