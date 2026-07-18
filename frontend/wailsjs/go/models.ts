@@ -230,6 +230,27 @@ export namespace main {
 
 }
 
+export namespace recall {
+	
+	export class Info {
+	    present: boolean;
+	    path: string;
+	    bytes: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Info(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.present = source["present"];
+	        this.path = source["path"];
+	        this.bytes = source["bytes"];
+	    }
+	}
+
+}
+
 export namespace schtask {
 	
 	export class ForeignTask {

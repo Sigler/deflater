@@ -176,6 +176,14 @@ export const en = {
     dismiss: "Dismiss all",
   },
 
+  recall: {
+    title: "Recall has saved snapshots on this PC",
+    // {size} is a human size like "2.4 GB".
+    body: (size: string) =>
+      `Windows Recall has stored about ${size} of screen snapshots here. They're a record of what's been on your screen. You can see where they live, and the Recall fixes below can pause new ones or remove these for good.`,
+    openFolder: "Show me where",
+  },
+
   conflicts: {
     title: "Another cleanup tool is running here",
     body: "Deflater found a leftover scheduled task from an earlier debloat tool. It re-applies its own settings on a schedule, which can quietly fight your choices here. Deflater does this job now, so the old task is safe to remove.",

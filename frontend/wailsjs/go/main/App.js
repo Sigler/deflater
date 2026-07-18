@@ -22,6 +22,14 @@ export function OpenLogFolder() {
   return window['go']['main']['App']['OpenLogFolder']();
 }
 
+export function OpenRecallFolder() {
+  return window['go']['main']['App']['OpenRecallFolder']();
+}
+
+export function RecallSnapshots() {
+  return window['go']['main']['App']['RecallSnapshots']();
+}
+
 export function RemoveConflictingTasks(arg1) {
   return window['go']['main']['App']['RemoveConflictingTasks'](arg1);
 }

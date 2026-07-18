@@ -55,6 +55,12 @@ export interface UpdateInfo {
   url: string;
 }
 
+export interface RecallInfo {
+  present: boolean;
+  path: string;
+  bytes: number;
+}
+
 export interface Report {
   version: string;
   elevated: boolean;

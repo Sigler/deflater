@@ -7,6 +7,8 @@ import {
   DismissAlerts,
   GetReport,
   OpenLogFolder,
+  OpenRecallFolder,
+  RecallSnapshots,
   RemoveConflictingTasks,
   RemovePackage,
   RestartExplorer,
@@ -18,7 +20,14 @@ import {
   TakePending,
 } from "../../wailsjs/go/main/App";
 import { BrowserOpenURL, EventsOn } from "../../wailsjs/runtime/runtime";
-import type { ApplyOutcome, Pending, Report, ToggleResult, UpdateInfo } from "./types";
+import type {
+  ApplyOutcome,
+  Pending,
+  RecallInfo,
+  Report,
+  ToggleResult,
+  UpdateInfo,
+} from "./types";
 
 export const api = {
   getReport: () => GetReport() as Promise<Report>,
@@ -35,6 +44,8 @@ export const api = {
   restartExplorer: () => RestartExplorer(),
   checkUpdate: () => CheckUpdate() as Promise<UpdateInfo>,
   openUrl: (url: string) => BrowserOpenURL(url),
+  recallSnapshots: () => RecallSnapshots() as Promise<RecallInfo>,
+  openRecallFolder: () => OpenRecallFolder(),
   openLogFolder: () => OpenLogFolder(),
   onApplyProgress: (cb: (result: unknown) => void) => EventsOn("apply:progress", cb),
   openStorePage: (productId: string) =>

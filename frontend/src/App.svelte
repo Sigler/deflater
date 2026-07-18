@@ -12,10 +12,18 @@
   import Header from "./lib/components/Header.svelte";
   import MaintenanceCard from "./lib/components/MaintenanceCard.svelte";
   import Modal from "./lib/components/Modal.svelte";
+  import RecallBanner from "./lib/components/RecallBanner.svelte";
   import ScanBar from "./lib/components/ScanBar.svelte";
   import ToastHost from "./lib/components/ToastHost.svelte";
   import { clearToasts, pushToast } from "./lib/toasts.svelte";
-  import type { FixResult, FixState, Refresh, Report, UpdateInfo } from "./lib/types";
+  import type {
+    FixResult,
+    FixState,
+    RecallInfo,
+    Refresh,
+    Report,
+    UpdateInfo,
+  } from "./lib/types";
 
   let report = $state<Report | null>(null);
   let loadError = $state("");
@@ -26,6 +34,7 @@
   let maintenancePendingElevation = $state(false);
   let watcherPendingElevation = $state(false);
   let update = $state<UpdateInfo | null>(null);
+  let recallInfo = $state<RecallInfo | null>(null);
   let query = $state("");
 
   const filtering = $derived(query.trim().length > 0);
@@ -114,6 +123,14 @@
         .checkUpdate()
         .then((u) => {
           if (u.available) update = u;
+        })
+        .catch(() => {});
+      // Recall snapshot scan can touch many files; run it in the
+      // background and surface the privacy signal when it's done.
+      void api
+        .recallSnapshots()
+        .then((r) => {
+          if (r.present) recallInfo = r;
         })
         .catch(() => {});
       // If we were relaunched elevated to finish a staged apply, claim it
@@ -334,6 +351,9 @@
           ondismiss={dismissAlerts}
         />
         <ConflictBanner tasks={report.conflictingTasks} onremove={removeConflictingTask} />
+        {#if recallInfo}
+          <RecallBanner info={recallInfo} onopen={() => api.openRecallFolder()} />
+        {/if}
 
         <div class="stickytop">
           <div class="stickyrow">

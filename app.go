@@ -22,6 +22,7 @@ import (
 	"deflater/internal/engine"
 	"deflater/internal/logging"
 	"deflater/internal/psrun"
+	"deflater/internal/recall"
 	"deflater/internal/reg"
 	"deflater/internal/schtask"
 	"deflater/internal/toast"
@@ -537,6 +538,26 @@ func (a *App) RestartExplorer() error {
 		logging.Logf("refresh: restart explorer failed: %v", err)
 	}
 	return err
+}
+
+// RecallSnapshots reports whether Windows Recall has stored snapshots on
+// this PC and how much space they use. Read-only; the walk can touch many
+// files, so the UI calls it on its own rather than on every report.
+func (a *App) RecallSnapshots() recall.Info {
+	return recall.Detect()
+}
+
+// OpenRecallFolder opens the Recall snapshot store in Explorer. It refuses
+// any path that isn't exactly the store, so this can't be repurposed to
+// open an arbitrary folder.
+func (a *App) OpenRecallFolder() {
+	info := recall.Detect()
+	if !info.Present || !recall.IsStorePath(info.Path) {
+		return
+	}
+	cmd := exec.Command("explorer.exe", info.Path)
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	_ = cmd.Start()
 }
 
 // CheckUpdate compares this build against the latest GitHub release.
