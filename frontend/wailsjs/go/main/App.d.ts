@@ -18,4 +18,4 @@ export function SetDirty(arg1:number):Promise<void>;
 
 export function SetMaintenance(arg1:boolean):Promise<boolean>;
 
-export function SetWatcher(arg1:boolean):Promise<void>;
+export function SetWatcher(arg1:boolean):Promise<boolean>;

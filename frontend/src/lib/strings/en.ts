@@ -137,7 +137,7 @@ export const en = {
     pendingElevation: "Turns on when you next apply changes.",
     watcherTitle: "Warn me when apps install themselves",
     watcherBody:
-      "If an app appears that you did not install, like a manufacturer app arriving with a new device, you get a notification and can remove it here.",
+      "Checks after sign-in and weekly. If an app appears that you did not install, like a manufacturer app arriving with a new device, you get a notification and can remove it here. Works on its own, with or without the switch above.",
   },
 
   alerts: {

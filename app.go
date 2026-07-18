@@ -175,8 +175,8 @@ func (a *App) Apply(enable []string, disable []string) (ApplyOutcome, error) {
 	}
 
 	cfg.Pending = nil
-	// Keep the maintenance task in sync while we hold admin rights.
-	a.syncMaintenanceTask(&cfg)
+	// Keep the scheduled task in sync while we hold admin rights.
+	_ = a.syncTask(&cfg)
 	if err := config.Save(cfg); err != nil {
 		return ApplyOutcome{}, err
 	}
@@ -203,44 +203,56 @@ func (a *App) SaveAndElevate(enable []string, disable []string) error {
 	return nil
 }
 
-// SetMaintenance turns the scheduled maintenance task on or off. The
-// preference always saves; registering the task itself needs admin
+// SetMaintenance turns automatic re-applying on or off. The preference
+// always saves; registering the scheduled task itself needs admin
 // rights, so unelevated it takes effect on the next elevated apply.
 func (a *App) SetMaintenance(on bool) (bool, error) {
 	cfg := config.Load()
 	cfg.Maintenance = on
-	applied := false
-	if elevate.IsElevated() {
-		a.syncMaintenanceTask(&cfg)
-		applied = cfg.Maintenance == on // sync flips it back on failure
-	}
+	applied := a.syncTaskIfElevated(&cfg, func() { cfg.Maintenance = !on })
 	if err := config.Save(cfg); err != nil {
 		return applied, err
 	}
 	return applied, nil
 }
 
-// syncMaintenanceTask makes the real scheduled task match cfg.Maintenance.
-// Must be called elevated. On enable it first copies the exe to a stable
-// per-machine location so the task survives the original download being
-// moved or deleted.
-func (a *App) syncMaintenanceTask(cfg *config.Config) {
-	if cfg.Maintenance {
+// syncTaskIfElevated syncs the scheduled task when running elevated,
+// calling rollback if that fails. Returns whether the task now matches
+// the config (false when elevation is still needed).
+func (a *App) syncTaskIfElevated(cfg *config.Config, rollback func()) bool {
+	if !elevate.IsElevated() {
+		return false
+	}
+	if err := a.syncTask(cfg); err != nil {
+		rollback()
+		return false
+	}
+	return true
+}
+
+// syncTask makes the real scheduled task match the config: it exists
+// while either maintenance or the watcher wants it, and is removed when
+// both are off. Must be called elevated. On install it first copies the
+// exe to a stable per-machine location so the task survives the
+// original download being moved or deleted.
+func (a *App) syncTask(cfg *config.Config) error {
+	if cfg.Maintenance || cfg.WatcherEnabled {
 		exePath, err := installSelf()
 		if err == nil {
 			err = schtask.Install(exePath)
 		}
 		if err != nil {
-			logging.Logf("maintenance: enable failed: %v", err)
-			cfg.Maintenance = false
-			return
+			logging.Logf("task: enable failed: %v", err)
+			return err
 		}
-		logging.Logf("maintenance: task registered at %s", exePath)
-		return
+		logging.Logf("task: registered at %s", exePath)
+		return nil
 	}
 	if err := schtask.Uninstall(); err != nil {
-		logging.Logf("maintenance: disable failed: %v", err)
+		logging.Logf("task: remove failed: %v", err)
+		return err
 	}
+	return nil
 }
 
 // SetDirty records how many staged changes are awaiting apply.
@@ -274,11 +286,16 @@ func (a *App) beforeClose(ctx context.Context) bool {
 	return choice != "Yes"
 }
 
-// SetWatcher toggles silent-install alerts (used by maintenance runs).
-func (a *App) SetWatcher(on bool) error {
+// SetWatcher toggles silent-install alerts. Independent of maintenance:
+// either switch keeps the shared scheduled task alive.
+func (a *App) SetWatcher(on bool) (bool, error) {
 	cfg := config.Load()
 	cfg.WatcherEnabled = on
-	return config.Save(cfg)
+	applied := a.syncTaskIfElevated(&cfg, func() { cfg.WatcherEnabled = !on })
+	if err := config.Save(cfg); err != nil {
+		return applied, err
+	}
+	return applied, nil
 }
 
 // DismissAlerts clears reviewed silent-install alerts.

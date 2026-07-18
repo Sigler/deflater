@@ -26,6 +26,16 @@ func Run() int {
 	elevated := elevate.IsElevated()
 
 	reapplied := 0
+	if !cfg.Maintenance {
+		// Watcher-only mode: the task exists just to check for silent
+		// installs, so skip re-applying.
+		runWatcher(&cfg, eng)
+		if err := config.Save(cfg); err != nil {
+			logging.Logf("maintenance: save config failed: %v", err)
+		}
+		logging.Logf("maintenance: watcher-only pass done")
+		return 0
+	}
 	for _, id := range cfg.Managed {
 		fix, ok := catalog.ByID(id)
 		if !ok {

@@ -19,6 +19,7 @@
   let doneMessage = $state("");
   let failures = $state<FixResult[]>([]);
   let maintenancePendingElevation = $state(false);
+  let watcherPendingElevation = $state(false);
 
   const changes = $derived(
     report ? computeChanges(report.fixes, selection) : { enable: [], disable: [] },
@@ -73,6 +74,7 @@
       report = r;
       selection = new SvelteSet(initialSelection(r.fixes, r.managed));
       maintenancePendingElevation = false;
+      watcherPendingElevation = false;
     } finally {
       applying = false;
       progressText = "";
@@ -114,7 +116,8 @@
   async function setWatcher(on: boolean) {
     if (!report) return;
     report.watcher = on;
-    await api.setWatcher(on);
+    const applied = await api.setWatcher(on);
+    watcherPendingElevation = on && !applied;
   }
 
   async function removeAlertPackage(pkg: string) {
@@ -168,7 +171,8 @@
       <MaintenanceCard
         maintenance={report.maintenance}
         watcher={report.watcher}
-        pendingElevation={maintenancePendingElevation}
+        maintenancePending={maintenancePendingElevation}
+        watcherPending={watcherPendingElevation}
         onmaintenance={setMaintenance}
         onwatcher={setWatcher}
       />

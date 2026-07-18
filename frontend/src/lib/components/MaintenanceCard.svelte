@@ -5,13 +5,15 @@
   let {
     maintenance,
     watcher,
-    pendingElevation,
+    maintenancePending,
+    watcherPending,
     onmaintenance,
     onwatcher,
   }: {
     maintenance: boolean;
     watcher: boolean;
-    pendingElevation: boolean;
+    maintenancePending: boolean;
+    watcherPending: boolean;
     onmaintenance: (on: boolean) => void;
     onwatcher: (on: boolean) => void;
   } = $props();
@@ -22,23 +24,21 @@
     <div class="text">
       <span class="title">{S.maintenance.title}</span>
       <span class="body">{S.maintenance.body}</span>
-      {#if maintenance && pendingElevation}
+      {#if maintenance && maintenancePending}
         <span class="pending">{S.maintenance.pendingElevation}</span>
       {/if}
     </div>
     <Toggle checked={maintenance} label={S.maintenance.title} onchange={onmaintenance} />
   </div>
-  <div class="line sub" class:dimmed={!maintenance}>
+  <div class="line sub">
     <div class="text">
       <span class="title small">{S.maintenance.watcherTitle}</span>
       <span class="body">{S.maintenance.watcherBody}</span>
+      {#if watcher && watcherPending}
+        <span class="pending">{S.maintenance.pendingElevation}</span>
+      {/if}
     </div>
-    <Toggle
-      checked={watcher}
-      disabled={!maintenance}
-      label={S.maintenance.watcherTitle}
-      onchange={onwatcher}
-    />
+    <Toggle checked={watcher} label={S.maintenance.watcherTitle} onchange={onwatcher} />
   </div>
 </div>
 
@@ -60,9 +60,6 @@
   }
   .line.sub {
     border-top: 1px solid var(--stroke);
-  }
-  .line.sub.dimmed .text {
-    opacity: 0.5;
   }
   .text {
     flex: 1;
