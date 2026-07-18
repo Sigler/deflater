@@ -16,7 +16,7 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
-const appVersion = "0.1.0"
+const appVersion = "0.1.1"
 
 func main() {
 	// Headless maintenance pass, run by the scheduled task. No window.
