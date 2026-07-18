@@ -22,7 +22,7 @@ export const en = {
     notElevated: "Standard user",
     notElevatedHint: "Windows will ask for permission when you apply changes.",
     readout: (n: number, total: number) =>
-      `Deflater reads this PC's real settings. ${n} of ${total} fixes are already in place. Nothing changes until you press Apply.`,
+      `Deflater reads this PC's real settings. ${n} of ${total} fixes are already applied. Nothing changes until you press Apply.`,
     loading: "Reading your system…",
     loadingHint: "Checking every switch and installed app. This takes a few seconds.",
   },
@@ -75,19 +75,11 @@ export const en = {
   },
 
   status: {
-    on: "On",
-    off: "Off",
-    partlyOn: "Partly on",
-    installed: "Installed",
-    notInstalled: "Not installed",
-    blocked: "Blocked",
-    notBlocked: "Not blocked",
-    partlyBlocked: "Partly blocked",
-    willTurnOn: "Will turn on",
-    willTurnOff: "Will turn off",
-    willRemove: "Will uninstall",
-    willBlock: "Will block",
-    willUnblock: "Will unblock",
+    applied: "Applied",
+    notApplied: "Not applied",
+    partlyApplied: "Partly applied",
+    willApply: "Will apply",
+    willUndo: "Will undo",
     unknown: "Unknown",
   },
 

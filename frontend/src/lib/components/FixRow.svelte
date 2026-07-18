@@ -65,7 +65,7 @@
       </span>
       <span class="summary">{text?.summary ?? ""}</span>
     </button>
-    <StatusChip status={fix.status} kind={fix.kind} {selected} {pending} />
+    <StatusChip status={fix.status} {selected} {pending} />
     <Toggle
       checked={selected}
       disabled={locked}
