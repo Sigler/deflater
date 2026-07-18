@@ -1,4 +1,4 @@
-﻿// Every user-facing word in Deflater lives here, keyed by the ids the
+// Every user-facing word in Deflater lives here, keyed by the ids the
 // Go catalog exposes. Adding a language means translating this file and
 // switching the export in ../i18n.ts. Style notes: plain sentences,
 // honest about tradeoffs, no jargon, no drama.

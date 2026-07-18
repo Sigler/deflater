@@ -17,14 +17,16 @@ if (git status --porcelain) {
     throw 'Working tree is not clean. Commit or stash first.'
 }
 
-# Stamp the version everywhere it lives.
-$main = Get-Content "$root\main.go" -Raw
-$main = $main -replace 'const appVersion = "[^"]+"', "const appVersion = `"$Version`""
-Set-Content "$root\main.go" $main -NoNewline -Encoding UTF8
+# Stamp the version everywhere it lives. WriteAllText with a BOM-less
+# encoding: PowerShell 5.1's Set-Content -Encoding UTF8 writes a BOM,
+# which breaks strict JSON parsers.
+$utf8 = New-Object System.Text.UTF8Encoding($false)
 
-$wails = Get-Content "$root\wails.json" -Raw
-$wails = $wails -replace '"productVersion": "[^"]+"', "`"productVersion`": `"$Version`""
-Set-Content "$root\wails.json" $wails -NoNewline -Encoding UTF8
+$main = (Get-Content "$root\main.go" -Raw) -replace 'const appVersion = "[^"]+"', "const appVersion = `"$Version`""
+[System.IO.File]::WriteAllText("$root\main.go", $main, $utf8)
+
+$wails = (Get-Content "$root\wails.json" -Raw) -replace '"productVersion": "[^"]+"', "`"productVersion`": `"$Version`""
+[System.IO.File]::WriteAllText("$root\wails.json", $wails, $utf8)
 
 git add main.go wails.json
 git commit -m "Release v$Version"
