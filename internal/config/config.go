@@ -68,7 +68,10 @@ type Config struct {
 func path() string     { return filepath.Join(logging.Dir(), "config.json") }
 func lockPath() string { return filepath.Join(logging.Dir(), "config.json.lock") }
 
-func defaults() Config { return Config{WatcherEnabled: true} }
+// defaults: everything off. Nothing that needs a scheduled task is on
+// until the user turns it on, so a fresh install shows no task-mismatch
+// prompt and installs no background task uninvited.
+func defaults() Config { return Config{} }
 
 // Load reads the config, returning sensible defaults when absent. A
 // corrupt file is preserved (renamed aside) rather than silently

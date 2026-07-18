@@ -254,12 +254,6 @@
           ondismiss={dismissAlerts}
         />
 
-        {#if report.taskMismatch}
-          <div class="done warn">
-            <p>{S.maintenance.mismatch}</p>
-          </div>
-        {/if}
-
         {#if doneMessage}
           <div class="done" class:warn={doneWarn}>
             <p>{doneMessage}</p>
@@ -295,6 +289,9 @@
             <h2>{S.nav.maintenance}</h2>
             <p>{S.maintenance.sectionBlurb}</p>
           </div>
+          {#if report.taskMismatch}
+            <div class="done warn"><p>{S.maintenance.mismatch}</p></div>
+          {/if}
           <MaintenanceCard
             maintenance={report.maintenance}
             watcher={report.watcher}
