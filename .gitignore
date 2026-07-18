@@ -1,0 +1,15 @@
+# Build output
+/build/bin/
+/frontend/dist/
+
+# Dependencies
+/frontend/node_modules/
+
+# Wails generated bindings are committed on purpose (frontend imports them),
+# but the dev-only artifacts are not.
+/frontend/wailsjs/runtime/runtime.d.ts.map
+
+# Editor and OS noise
+.DS_Store
+Thumbs.db
+*.log

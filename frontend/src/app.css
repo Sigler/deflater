@@ -1,0 +1,97 @@
+/* Deflater design tokens. Dark workshop: warm charcoal, coral for action,
+   gold for attention. Windows-adjacent geometry and type so it feels at
+   home next to the OS without imitating it. */
+
+:root {
+  /* Surfaces, warmest at the bottom of the stack */
+  --bg-window: #191614;
+  --bg-panel: #201d1a;
+  --bg-card: #272320;
+  --bg-raised: #2f2a26;
+  --stroke: rgba(255, 244, 230, 0.08);
+  --stroke-strong: rgba(255, 244, 230, 0.16);
+
+  /* Ink */
+  --text: #ece5dd;
+  --text-dim: #a89e93;
+  --text-faint: #7d746b;
+
+  /* Brand */
+  --coral: #e56a4d;
+  --coral-bright: #f57f60;
+  --coral-soft: rgba(229, 106, 77, 0.16);
+  --gold: #d6a44c;
+  --gold-soft: rgba(214, 164, 76, 0.14);
+  --sage: #9db878;
+  --sage-soft: rgba(157, 184, 120, 0.14);
+
+  /* Shape */
+  --r-card: 8px;
+  --r-chip: 999px;
+  --r-control: 6px;
+
+  font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg-window);
+  overflow: hidden;
+}
+
+#app {
+  height: 100%;
+}
+
+::selection {
+  background: var(--coral-soft);
+}
+
+/* Scrollbars, quiet and warm */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 244, 230, 0.12);
+  border-radius: 5px;
+  border: 2px solid var(--bg-window);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 244, 230, 0.2);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+button:focus-visible,
+[role="switch"]:focus-visible {
+  outline: 2px solid var(--coral);
+  outline-offset: 2px;
+  border-radius: var(--r-control);
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
