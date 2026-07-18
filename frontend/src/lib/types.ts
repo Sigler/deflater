@@ -45,6 +45,13 @@ export interface ForeignTask {
   note: string;
 }
 
+export interface UpdateInfo {
+  available: boolean;
+  current: string;
+  latest: string;
+  url: string;
+}
+
 export interface Report {
   version: string;
   elevated: boolean;

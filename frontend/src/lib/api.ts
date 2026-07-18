@@ -3,6 +3,7 @@
 
 import {
   Apply,
+  CheckUpdate,
   DismissAlerts,
   GetReport,
   OpenLogFolder,
@@ -16,7 +17,7 @@ import {
   TakePending,
 } from "../../wailsjs/go/main/App";
 import { BrowserOpenURL, EventsOn } from "../../wailsjs/runtime/runtime";
-import type { ApplyOutcome, Pending, Report, ToggleResult } from "./types";
+import type { ApplyOutcome, Pending, Report, ToggleResult, UpdateInfo } from "./types";
 
 export const api = {
   getReport: () => GetReport() as Promise<Report>,
@@ -30,6 +31,8 @@ export const api = {
   removePackage: (name: string) => RemovePackage(name),
   removeConflictingTasks: (names: string[]) => RemoveConflictingTasks(names),
   stageTaskRemovalAndElevate: (name: string) => StageTaskRemovalAndElevate(name),
+  checkUpdate: () => CheckUpdate() as Promise<UpdateInfo>,
+  openUrl: (url: string) => BrowserOpenURL(url),
   openLogFolder: () => OpenLogFolder(),
   onApplyProgress: (cb: (result: unknown) => void) => EventsOn("apply:progress", cb),
   openStorePage: (productId: string) =>

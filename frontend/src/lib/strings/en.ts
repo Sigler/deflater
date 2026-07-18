@@ -174,6 +174,8 @@ export const en = {
     logs: "Open logs",
     assurance: "Never touches Defender, Secure Boot, TPM, or anything Xbox or Game Pass.",
     version: (v: string) => `Deflater ${v} · anti-bloat enforcement, est. 2026`,
+    // {v} is the newer version available on GitHub.
+    updateAvailable: (v: string) => `Version ${v} is available`,
   },
 
   fixes: {

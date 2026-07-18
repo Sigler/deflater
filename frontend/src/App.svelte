@@ -13,7 +13,7 @@
   import MaintenanceCard from "./lib/components/MaintenanceCard.svelte";
   import Modal from "./lib/components/Modal.svelte";
   import ScanBar from "./lib/components/ScanBar.svelte";
-  import type { FixResult, Report } from "./lib/types";
+  import type { FixResult, Report, UpdateInfo } from "./lib/types";
 
   let report = $state<Report | null>(null);
   let loadError = $state("");
@@ -26,6 +26,7 @@
   let failures = $state<FixResult[]>([]);
   let maintenancePendingElevation = $state(false);
   let watcherPendingElevation = $state(false);
+  let update = $state<UpdateInfo | null>(null);
 
   const changes = $derived(
     report ? computeChanges(report.fixes, selection) : { enable: [], disable: [] },
@@ -95,6 +96,14 @@
       const r = await api.getReport();
       report = r;
       selection = new SvelteSet(initialSelection(r.fixes, r.managed));
+      // Fire-and-forget update check: never blocks the UI, and any
+      // failure (offline, rate-limited) just leaves the note hidden.
+      void api
+        .checkUpdate()
+        .then((u) => {
+          if (u.available) update = u;
+        })
+        .catch(() => {});
       // If we were relaunched elevated to finish a staged apply, claim it
       // (consume-on-read, so it can never fire twice) and run it.
       const pending = await api.takePending();
@@ -335,7 +344,13 @@
             {S.footer.logs}
           </button>
           <span>{S.footer.assurance}</span>
-          <span class="stamp">{S.footer.version(report.version)}</span>
+          {#if update}
+            <button type="button" class="update" onclick={() => update && api.openUrl(update.url)}>
+              {S.footer.updateAvailable(update.latest)}
+            </button>
+          {:else}
+            <span class="stamp">{S.footer.version(report.version)}</span>
+          {/if}
         </footer>
       </main>
     </div>
@@ -512,6 +527,16 @@
     text-transform: uppercase;
     letter-spacing: 0.07em;
     font-size: 10.5px;
+  }
+  .update {
+    font-size: 11px;
+    color: var(--coral-bright);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    white-space: nowrap;
+  }
+  .update:hover {
+    color: var(--coral);
   }
   .primary {
     padding: 8px 18px;

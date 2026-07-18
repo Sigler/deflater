@@ -24,6 +24,7 @@ import (
 	"deflater/internal/reg"
 	"deflater/internal/schtask"
 	"deflater/internal/toast"
+	"deflater/internal/update"
 )
 
 // App is the bridge the frontend calls. Every exported method becomes a
@@ -502,6 +503,13 @@ func (a *App) beforeClose(ctx context.Context) bool {
 		return false
 	}
 	return choice != "Yes"
+}
+
+// CheckUpdate compares this build against the latest GitHub release.
+// Best-effort and fail-silent: the UI shows a link only when something
+// newer exists. This is awareness, not an auto-updater.
+func (a *App) CheckUpdate() update.Info {
+	return update.Check(appVersion)
 }
 
 // DismissAlerts clears reviewed silent-install alerts.

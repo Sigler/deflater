@@ -6,6 +6,10 @@ export function Apply(arg1, arg2) {
   return window['go']['main']['App']['Apply'](arg1, arg2);
 }
 
+export function CheckUpdate() {
+  return window['go']['main']['App']['CheckUpdate']();
+}
+
 export function DismissAlerts() {
   return window['go']['main']['App']['DismissAlerts']();
 }
