@@ -1,5 +1,6 @@
 <script lang="ts">
   import { slide } from "svelte/transition";
+  import { api } from "../api";
   import { S } from "../i18n";
   import type { FixState } from "../types";
   import StatusChip from "./StatusChip.svelte";
@@ -21,8 +22,9 @@
 
   const text = $derived(S.fixes[fix.id as keyof typeof S.fixes]);
   const isApp = $derived(fix.kind === "app-junk" || fix.kind === "app-might");
-  // A gone app cannot be brought back by a toggle; lock it on.
-  const locked = $derived(isApp && fix.status === "removed");
+  // A gone app cannot be brought back by a toggle, so those rows show a
+  // Reinstall link (into the Microsoft Store) where the toggle would be.
+  const gone = $derived(isApp && fix.status === "removed");
 
   const mechanism = $derived.by(() => {
     const parts: string[] = [];
@@ -66,12 +68,22 @@
       <span class="summary">{text?.summary ?? ""}</span>
     </button>
     <StatusChip status={fix.status} {selected} {pending} />
-    <Toggle
-      checked={selected}
-      disabled={locked}
-      label={text?.title ?? fix.id}
-      onchange={(v) => ontoggle(fix.id, v)}
-    />
+    {#if gone}
+      <button
+        type="button"
+        class="reinstall"
+        title={S.details.reinstallHint}
+        onclick={() => api.openStoreSearch(text?.store ?? text?.title ?? fix.id)}
+      >
+        {S.details.reinstall}
+      </button>
+    {:else}
+      <Toggle
+        checked={selected}
+        label={text?.title ?? fix.id}
+        onchange={(v) => ontoggle(fix.id, v)}
+      />
+    {/if}
     <span class="dotslot" aria-hidden={!pending}>
       {#if pending}
         <span class="pending" title={S.badges.willChange} aria-label={S.badges.willChange}></span>
@@ -84,6 +96,7 @@
       <div class="block">
         <span class="label">{S.details.what}</span>
         <p>{text.what}</p>
+        {#if fix.status === "partial"}<p class="partial">{S.details.partialNote}</p>{/if}
         {#if mechanism}<p class="mech">{mechanism}</p>{/if}
       </div>
       {#if text.tradeoff}
@@ -208,5 +221,27 @@
   .mech {
     font-size: 12px !important;
     color: var(--text-faint) !important;
+  }
+  .partial {
+    color: var(--gold) !important;
+    font-size: 12.5px !important;
+  }
+  .reinstall {
+    flex: none;
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: var(--r-control);
+    background: var(--bg-raised);
+    color: var(--text-dim);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 244, 230, 0.06),
+      0 1px 2px rgba(0, 0, 0, 0.3);
+    transition:
+      color 0.12s ease,
+      background 0.12s ease;
+  }
+  .reinstall:hover {
+    color: var(--coral-bright);
+    background: var(--bg-card);
   }
 </style>

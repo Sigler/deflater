@@ -14,13 +14,14 @@ function needsApply(fix: FixState, selected: boolean): boolean {
   return fix.status === "off" || fix.status === "partial" || fix.status === "installed";
 }
 
-// A fix needs reverting when deselected but still in effect. App
-// removals cannot be reverted here (the Store reinstalls them), so only
-// switches and OneDrive's policy half qualify.
+// A fix needs reverting when deselected but still fully in effect. App
+// removals cannot be reverted here (the Store reinstalls them), and
+// partly-applied fixes are left alone rather than half-undone, so only
+// fully-on switches and OneDrive's policy half qualify.
 function needsRevert(fix: FixState, selected: boolean): boolean {
   if (selected) return false;
   if (fix.kind === "app-junk" || fix.kind === "app-might") return false;
-  return fix.status === "on" || fix.status === "partial";
+  return fix.status === "on";
 }
 
 // computeChanges turns the current selection into the enable/disable
@@ -36,14 +37,16 @@ export function computeChanges(fixes: FixState[], selection: Set<string>): Chang
   return { enable, disable };
 }
 
-// initialSelection reflects reality at startup: everything already in
-// effect (fully or partly, so a partial fix completes rather than
-// reverts), plus anything the user manages that has drifted off.
+// initialSelection reflects reality at startup, and must never queue a
+// change the user did not make: only fully-applied fixes start selected.
+// Partly-applied fixes start off with a gold "Partly applied" chip, so
+// completing them is an explicit choice. Managed fixes (ones the user
+// applied before) are the exception: they re-select even when drifted,
+// because keeping them applied is what the user already asked for.
 export function initialSelection(fixes: FixState[], managed: string[]): Set<string> {
   const sel = new Set<string>();
   for (const fix of fixes) {
-    if (fix.status === "on" || fix.status === "partial" || fix.status === "removed")
-      sel.add(fix.id);
+    if (fix.status === "on" || fix.status === "removed") sel.add(fix.id);
   }
   for (const id of managed) sel.add(id);
   // Managed ids may reference fixes retired from the catalog; drop them.

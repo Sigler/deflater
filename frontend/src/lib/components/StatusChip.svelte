@@ -12,7 +12,9 @@
   // names, so it can never be misread as the state of the annoyance
   // ("On" next to "Turn off widgets" could; "Applied" cannot). Present
   // tense states reality; coral future tense appears when the toggle
-  // diverges and previews what Apply will do.
+  // diverges and previews what Apply will do. The surface model is
+  // deliberately binary: a partly-set fix is shown as Not applied (it
+  // is not fully protecting you), and the details panel explains why.
   const chip = $derived.by((): { label: string; tone: string } => {
     if (pending) {
       return selected
@@ -23,11 +25,9 @@
       case "on":
       case "removed":
         return { label: S.status.applied, tone: "good" };
-      case "partial":
-        return { label: S.status.partlyApplied, tone: "mixed" };
       case "unknown":
         return { label: S.status.unknown, tone: "neutral" };
-      default: // "off" | "installed"
+      default: // "off" | "partial" | "installed"
         return { label: S.status.notApplied, tone: "neutral" };
     }
   });

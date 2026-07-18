@@ -1,7 +1,7 @@
 <script lang="ts">
   import { SvelteSet } from "svelte/reactivity";
   import { api } from "./lib/api";
-  import { computeChanges, initialSelection, profileSelection } from "./lib/changes";
+  import { computeChanges, initialSelection } from "./lib/changes";
   import { S } from "./lib/i18n";
   import AlertsBanner from "./lib/components/AlertsBanner.svelte";
   import ApplyBar from "./lib/components/ApplyBar.svelte";
@@ -9,7 +9,6 @@
   import Header from "./lib/components/Header.svelte";
   import MaintenanceCard from "./lib/components/MaintenanceCard.svelte";
   import Modal from "./lib/components/Modal.svelte";
-  import PresetBar from "./lib/components/PresetBar.svelte";
   import type { FixResult, Report } from "./lib/types";
 
   let report = $state<Report | null>(null);
@@ -105,11 +104,6 @@
     doneMessage = "";
   }
 
-  function pickProfile(profile: string) {
-    if (report) selection = new SvelteSet(profileSelection(report.fixes, profile));
-    doneMessage = "";
-  }
-
   async function setMaintenance(on: boolean) {
     if (!report) return;
     report.maintenance = on;
@@ -160,8 +154,6 @@
           {/if}
         </div>
       {/if}
-
-      <PresetBar fixes={report.fixes} {selection} onpick={pickProfile} />
 
       {#each report.categories as cat (cat)}
         <CategorySection

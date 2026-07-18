@@ -37,6 +37,13 @@ describe("computeChanges", () => {
     expect(disable).toEqual(["a"]);
   });
 
+  it("leaves deselected partial fixes alone instead of half-undoing them", () => {
+    const fixes = [fix({ id: "half", status: "partial" })];
+    const { enable, disable } = computeChanges(fixes, new Set());
+    expect(enable).toEqual([]);
+    expect(disable).toEqual([]);
+  });
+
   it("never tries to revert an app removal", () => {
     const fixes = [fix({ id: "app", kind: "app-might", status: "removed" })];
     expect(computeChanges(fixes, new Set()).disable).toEqual([]);
@@ -71,11 +78,21 @@ describe("initialSelection", () => {
     expect(sel).toEqual(new Set(["on-now", "gone-app", "drifted"]));
   });
 
-  it("selects partial fixes so they complete instead of reverting", () => {
-    const fixes = [fix({ id: "half", status: "partial" })];
+  it("never queues a change at startup, including for partial fixes", () => {
+    const fixes = [
+      fix({ id: "half", status: "partial" }),
+      fix({ id: "done", status: "on" }),
+      fix({ id: "untouched", status: "off" }),
+    ];
     const sel = initialSelection(fixes, []);
-    expect(sel).toEqual(new Set(["half"]));
-    expect(computeChanges(fixes, sel).enable).toEqual(["half"]);
+    expect(sel).toEqual(new Set(["done"]));
+    expect(computeChanges(fixes, sel)).toEqual({ enable: [], disable: [] });
+  });
+
+  it("re-queues a managed fix that drifted to partial", () => {
+    const fixes = [fix({ id: "managed-drift", status: "partial" })];
+    const sel = initialSelection(fixes, ["managed-drift"]);
+    expect(computeChanges(fixes, sel).enable).toEqual(["managed-drift"]);
   });
 
   it("drops managed ids no longer in the catalog", () => {

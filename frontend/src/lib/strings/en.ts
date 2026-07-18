@@ -9,6 +9,8 @@ export interface FixStrings {
   what: string;
   tradeoff?: string;
   undo: string;
+  // Microsoft Store search term for uninstalled apps' Reinstall link.
+  store?: string;
 }
 
 export const en = {
@@ -77,7 +79,6 @@ export const en = {
   status: {
     applied: "Applied",
     notApplied: "Not applied",
-    partlyApplied: "Partly applied",
     willApply: "Will apply",
     willUndo: "Will undo",
     unknown: "Unknown",
@@ -97,6 +98,10 @@ export const en = {
     mechanismApp: (names: string) => `Uninstalls: ${names}.`,
     undoSwitch: "Flip the toggle off and apply. Deflater restores the Windows default.",
     undoApp: "Reinstall it from the Microsoft Store any time, free.",
+    reinstall: "Reinstall",
+    reinstallHint: "Opens the Microsoft Store",
+    partialNote:
+      "Part of this fix is already set on this PC, most likely by another tool or an older script. Applying it completes the rest.",
   },
 
   apply: {
@@ -220,12 +225,14 @@ export const en = {
       summary: "Removes the Microsoft 365 app that mostly sells subscriptions.",
       what: "Uninstalls the Microsoft 365 hub app. This is the promo shell, not Office itself: Word, Excel, and your documents are untouched whether or not you have Office installed.",
       undo: "Reinstall 'Microsoft 365' from the Microsoft Store any time.",
+      store: "Microsoft 365",
     },
     "app-news": {
       title: "Uninstall News app",
       summary: "Removes Microsoft's Bing-powered news app.",
       what: "Uninstalls Microsoft News for every account on this PC and stops Windows re-adding it for new accounts.",
       undo: "Reinstall 'Microsoft News' from the Microsoft Store any time.",
+      store: "Microsoft News",
     },
     "app-weather": {
       title: "Uninstall Weather app",
@@ -233,6 +240,7 @@ export const en = {
       what: "Uninstalls MSN Weather. The taskbar weather button is separate; that belongs to Widgets, covered below.",
       tradeoff: "If you actually open the Weather app, keep it or reinstall it later.",
       undo: "Reinstall 'MSN Weather' from the Microsoft Store any time.",
+      store: "MSN Weather",
     },
     "app-solitaire": {
       title: "Uninstall Solitaire",
@@ -241,6 +249,7 @@ export const en = {
       tradeoff:
         "If someone in the house plays it daily, keep it. It reinstalls free from the Store.",
       undo: "Reinstall 'Microsoft Solitaire Collection' from the Microsoft Store any time.",
+      store: "Microsoft Solitaire Collection",
     },
     "app-gethelp": {
       title: "Uninstall Get Help app",
@@ -248,24 +257,28 @@ export const en = {
       what: "Uninstalls Get Help, the app that opens when Windows wants to route you to Microsoft support articles and chat.",
       tradeoff: "If you ever contact Microsoft support, you would reinstall it first.",
       undo: "Reinstall 'Get Help' from the Microsoft Store any time.",
+      store: "Get Help",
     },
     "app-feedback": {
       title: "Uninstall Feedback Hub",
       summary: "Removes the app for sending feedback to Microsoft.",
       what: "Uninstalls Feedback Hub, which most people open exactly once, by accident, from a keyboard shortcut.",
       undo: "Reinstall 'Feedback Hub' from the Microsoft Store any time.",
+      store: "Feedback Hub",
     },
     "app-bingsearch": {
       title: "Uninstall Bing Search app",
       summary: "Removes the 'Web Search from Microsoft Bing' component.",
       what: "Uninstalls the Bing web search app added in recent Windows versions. Pairs well with the Start menu web results switch below.",
       undo: "Reinstall it from the Microsoft Store any time.",
+      store: "Bing Search",
     },
     "app-powerautomate": {
       title: "Uninstall Power Automate",
       summary: "Removes Microsoft's workflow automation stub.",
       what: "Uninstalls Power Automate Desktop, preinstalled for enterprise automation almost no home user touches.",
       undo: "Reinstall 'Power Automate' from the Microsoft Store any time.",
+      store: "Power Automate",
     },
 
     // ---- Start, search, taskbar ----------------------------------------
@@ -298,6 +311,7 @@ export const en = {
       what: "Uninstalls the Copilot app. On current Windows versions this is the mechanism that actually works; the old 'turn off Copilot' policy is deprecated and ignored. The silent-install block above keeps promotions from re-adding it.",
       tradeoff: "If you use Copilot, keep it. It reinstalls free from the Store.",
       undo: "Reinstall 'Microsoft Copilot' from the Microsoft Store any time.",
+      store: "Microsoft Copilot",
     },
     "recall-off": {
       title: "Block Recall screen snapshots",
@@ -368,6 +382,7 @@ export const en = {
       what: "Uninstalls Phone Link and its cross-device helper together; removing only one leaves phone integration half-broken, so Deflater treats them as a set.",
       tradeoff: "No more phone notifications, texts, or photos on this PC until reinstalled.",
       undo: "Reinstall 'Phone Link' from the Microsoft Store; the helper comes back with it.",
+      store: "Phone Link",
     },
     "app-teams": {
       title: "Uninstall Microsoft Teams",
@@ -375,6 +390,7 @@ export const en = {
       what: "Uninstalls the Teams app Windows preinstalls and pins. If work or school uses Teams in the browser, that still works.",
       tradeoff: "Keep it if family, work, or school call you on Teams.",
       undo: "Reinstall 'Microsoft Teams' from the Microsoft Store any time.",
+      store: "Microsoft Teams",
     },
     "app-outlook": {
       title: "Uninstall new Outlook",
@@ -382,6 +398,7 @@ export const en = {
       what: "Uninstalls the 'new Outlook for Windows' that replaced Mail and Calendar. Your mail lives on the server and is untouched; other mail apps keep working.",
       tradeoff: "Keep it if it is your mail app.",
       undo: "Reinstall 'Outlook for Windows' from the Microsoft Store any time.",
+      store: "Outlook for Windows",
     },
     "app-clipchamp": {
       title: "Uninstall Clipchamp",
@@ -389,6 +406,7 @@ export const en = {
       what: "Uninstalls Clipchamp.",
       tradeoff: "Keep it if you edit videos with it.",
       undo: "Reinstall 'Clipchamp' from the Microsoft Store any time.",
+      store: "Clipchamp",
     },
     "app-todo": {
       title: "Uninstall Microsoft To Do",
@@ -396,6 +414,7 @@ export const en = {
       what: "Uninstalls Microsoft To Do. Your lists live in your Microsoft account and reappear if you ever reinstall.",
       tradeoff: "Keep it if you use it for lists and reminders.",
       undo: "Reinstall 'Microsoft To Do' from the Microsoft Store any time.",
+      store: "Microsoft To Do",
     },
     "app-family": {
       title: "Uninstall Family Safety",
@@ -403,6 +422,7 @@ export const en = {
       what: "Uninstalls Microsoft Family Safety.",
       tradeoff: "Do not remove this on a child's PC or a PC managed with family screen-time rules.",
       undo: "Reinstall 'Microsoft Family Safety' from the Microsoft Store any time.",
+      store: "Microsoft Family Safety",
     },
     "app-quickassist": {
       title: "Uninstall Quick Assist",
@@ -411,6 +431,7 @@ export const en = {
       tradeoff:
         "If someone you trust helps you remotely with Quick Assist, keep it, or reinstall it together when needed.",
       undo: "Reinstall 'Quick Assist' from the Microsoft Store any time.",
+      store: "Quick Assist",
     },
   } as Record<string, FixStrings>,
 };

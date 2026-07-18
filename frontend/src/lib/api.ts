@@ -12,7 +12,7 @@ import {
   SetMaintenance,
   SetWatcher,
 } from "../../wailsjs/go/main/App";
-import { EventsOn } from "../../wailsjs/runtime/runtime";
+import { BrowserOpenURL, EventsOn } from "../../wailsjs/runtime/runtime";
 import type { ApplyOutcome, Report } from "./types";
 
 export const api = {
@@ -26,4 +26,6 @@ export const api = {
   removePackage: (name: string) => RemovePackage(name),
   openLogFolder: () => OpenLogFolder(),
   onApplyProgress: (cb: (result: unknown) => void) => EventsOn("apply:progress", cb),
+  openStoreSearch: (query: string) =>
+    BrowserOpenURL(`ms-windows-store://search/?query=${encodeURIComponent(query)}`),
 };
