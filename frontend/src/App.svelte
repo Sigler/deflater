@@ -12,7 +12,6 @@
   import MaintenanceCard from "./lib/components/MaintenanceCard.svelte";
   import Modal from "./lib/components/Modal.svelte";
   import RecallBanner from "./lib/components/RecallBanner.svelte";
-  import ScanBar from "./lib/components/ScanBar.svelte";
   import ToastHost from "./lib/components/ToastHost.svelte";
   import { clearToasts, pushToast } from "./lib/toasts.svelte";
   import type {
@@ -55,7 +54,11 @@
   // Section navigation: sidenav when wide, tabs when narrow, scrollspy
   // highlighting whichever section is under the sticky bars.
   let scroller = $state<HTMLDivElement | null>(null);
+  let stickyEl = $state<HTMLDivElement | null>(null);
   let activeSection = $state("");
+  // True once the search bar has scrolled up and pinned to the top; only
+  // then does the small brand appear beside the search.
+  let stuck = $state(false);
 
   const navItems = $derived(
     report
@@ -70,7 +73,12 @@
   );
 
   function updateActive() {
-    if (!scroller || navItems.length === 0) return;
+    if (!scroller) return;
+    // The bar is "stuck" when its top has reached the scroller's top.
+    if (stickyEl) {
+      stuck = stickyEl.getBoundingClientRect().top <= scroller.getBoundingClientRect().top + 0.5;
+    }
+    if (navItems.length === 0) return;
     const y = scroller.scrollTop + 150;
     let current = navItems[0].id;
     for (const item of navItems) {
@@ -345,18 +353,20 @@
         <CategoryNav items={navItems} active={activeSection} variant="side" onjump={jump} />
       </aside>
       <main>
-        <Header />
+        <Header applied={inPlaceCount} total={report.fixes.length} />
         <ConflictBanner tasks={report.conflictingTasks} onremove={removeConflictingTask} />
         {#if recallInfo}
           <RecallBanner info={recallInfo} onopen={() => api.openRecallFolder()} />
         {/if}
 
-        <div class="stickytop">
+        <div class="stickytop" bind:this={stickyEl}>
           <div class="stickyrow">
-            <div class="brand">
-              <img src={mascot} alt="" draggable="false" />
-              <span>{S.app.name}</span>
-            </div>
+            {#if stuck}
+              <div class="brand">
+                <img src={mascot} alt="" draggable="false" />
+                <span>{S.app.name}</span>
+              </div>
+            {/if}
             <div class="search">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
@@ -375,7 +385,6 @@
               {/if}
             </div>
           </div>
-          <ScanBar inPlace={inPlaceCount} total={report.fixes.length} />
           {#if !filtering}
             <div class="tabsrow">
               <CategoryNav items={navItems} active={activeSection} variant="tabs" onjump={jump} />
@@ -513,7 +522,7 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 8px 2px 2px;
+    padding: 9px 2px;
   }
   /* Minimal branding that rides along in the sticky bar once the full
      masthead scrolls away. */
