@@ -1,7 +1,7 @@
 // Package maintain is the headless mode behind "Deflater.exe
 // --maintenance", run by the scheduled task after sign-in and weekly.
 // It re-applies drifted fixes (Windows updates love to re-seed junk) and
-// watches for apps that appeared without the user asking.
+// watches for apps that appear without the user asking.
 package maintain
 
 import (
@@ -17,66 +17,97 @@ import (
 	"deflater/internal/watcher"
 )
 
+// deps are the seams between the maintenance logic and the real system.
+// Run wires the real implementations; tests inject fakes, so the whole
+// decision path runs under test without touching the machine.
+type deps struct {
+	byID      func(id string) (catalog.Fix, bool)
+	status    func(f catalog.Fix) (string, error)
+	apply     func(f catalog.Fix, elevated bool) error
+	installed func() (map[string]bool, error)
+	notify    func(title, body string) error
+	elevated  bool
+}
+
 // Run performs one maintenance pass. It returns the number of fixes it
 // had to re-apply.
 func Run() int {
-	logging.Logf("maintenance: start (elevated=%v)", elevate.IsElevated())
-	cfg := config.Load()
 	eng := &engine.Engine{Appx: &appx.Service{}}
-	elevated := elevate.IsElevated()
-
-	reapplied := 0
-	if !cfg.Maintenance {
-		// Watcher-only mode: the task exists just to check for silent
-		// installs, so skip re-applying.
-		runWatcher(&cfg, eng)
-		if err := config.Save(cfg); err != nil {
-			logging.Logf("maintenance: save config failed: %v", err)
-		}
-		logging.Logf("maintenance: watcher-only pass done")
-		return 0
+	d := deps{
+		byID:      catalog.ByID,
+		status:    eng.Status,
+		apply:     eng.Apply,
+		installed: eng.Appx.Installed,
+		notify:    toast.Show,
+		elevated:  elevate.IsElevated(),
 	}
-	for _, id := range cfg.Managed {
-		fix, ok := catalog.ByID(id)
-		if !ok {
-			continue // fix retired in a newer version
-		}
-		status, err := eng.Status(fix)
-		if err != nil {
-			logging.Logf("maintenance: %s: status check failed: %v", id, err)
-			continue
-		}
-		needsWork := status == engine.StatusOff || status == engine.StatusPartial || status == engine.StatusInstalled
-		if !needsWork {
-			continue
-		}
-		if err := eng.Apply(fix, elevated); err != nil {
-			logging.Logf("maintenance: %s: re-apply failed: %v", id, err)
-			continue
-		}
-		logging.Logf("maintenance: re-applied %s (was %s)", id, status)
-		reapplied++
-	}
-
-	runWatcher(&cfg, eng)
-
+	cfg := config.Load()
+	logging.Logf("maintenance: start (elevated=%v, maintenance=%v, watcher=%v)",
+		d.elevated, cfg.Maintenance, cfg.WatcherEnabled)
+	n := run(&cfg, d)
 	if err := config.Save(cfg); err != nil {
 		logging.Logf("maintenance: save config failed: %v", err)
 	}
-	logging.Logf("maintenance: done, re-applied %d", reapplied)
+	logging.Logf("maintenance: done, re-applied %d", n)
+	return n
+}
+
+// run is the whole pass: re-apply drifted managed fixes (when
+// maintenance is on), then check for silent installs (when the watcher
+// is on). The scheduled task exists if either switch wants it.
+func run(cfg *config.Config, d deps) int {
+	reapplied := 0
+	if cfg.Maintenance {
+		for _, id := range cfg.Managed {
+			fix, ok := d.byID(id)
+			if !ok {
+				continue // fix retired in a newer version
+			}
+			status, err := d.status(fix)
+			if err != nil {
+				logging.Logf("maintenance: %s: status check failed: %v", id, err)
+				continue
+			}
+			if !needsReapply(status) {
+				continue
+			}
+			if err := d.apply(fix, d.elevated); err != nil {
+				logging.Logf("maintenance: %s: re-apply failed: %v", id, err)
+				continue
+			}
+			logging.Logf("maintenance: re-applied %s (was %s)", id, status)
+			reapplied++
+		}
+	}
+	runWatcher(cfg, d)
 	return reapplied
 }
 
+// needsReapply reports whether a managed fix has drifted out of effect.
+func needsReapply(status string) bool {
+	return status == engine.StatusOff || status == engine.StatusPartial || status == engine.StatusInstalled
+}
+
 // runWatcher diffs the installed apps against the last snapshot and
-// records alerts (plus a toast) for anything that arrived on its own.
-func runWatcher(cfg *config.Config, eng *engine.Engine) {
-	current, err := eng.Appx.Installed()
+// records alerts (plus a notification) for anything that arrived on its
+// own. The snapshot updates even when alerts are off, so turning the
+// watcher on later starts from current reality.
+func runWatcher(cfg *config.Config, d deps) {
+	current, err := d.installed()
 	if err != nil {
 		logging.Logf("watcher: package list failed: %v", err)
 		return
 	}
 	if cfg.WatcherEnabled {
-		arrivals := watcher.NewArrivals(current, cfg.Snapshot, catalog.ManagedPackages(cfg.Managed))
+		managedPkgs := map[string]bool{}
+		for _, id := range cfg.Managed {
+			if f, ok := d.byID(id); ok {
+				for _, p := range f.Appx {
+					managedPkgs[p] = true
+				}
+			}
+		}
+		arrivals := watcher.NewArrivals(current, cfg.Snapshot, managedPkgs)
 		for _, pkg := range arrivals {
 			logging.Logf("watcher: new app appeared: %s", pkg)
 			cfg.AddAlert(pkg)
@@ -86,8 +117,8 @@ func runWatcher(cfg *config.Config, eng *engine.Engine) {
 			if len(arrivals) > 1 {
 				body = fmt.Sprintf("%s and %d more", arrivals[0], len(arrivals)-1)
 			}
-			if err := toast.Show("An app installed itself", body+" appeared without you asking. Open Deflater to review or remove it."); err != nil {
-				logging.Logf("watcher: toast failed: %v", err)
+			if err := d.notify("An app installed itself", body+" appeared without you asking. Open Deflater to review or remove it."); err != nil {
+				logging.Logf("watcher: notification failed: %v", err)
 			}
 		}
 	}

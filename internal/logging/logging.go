@@ -16,8 +16,12 @@ const maxLogBytes = 1 << 20 // rotate after 1 MB, keeps one previous file
 var mu sync.Mutex
 
 // Dir returns the Deflater data directory, creating it if needed.
+// DEFLATER_DATA_DIR overrides the location (tests, portable use).
 func Dir() string {
-	d := filepath.Join(os.Getenv("LOCALAPPDATA"), "Deflater")
+	d := os.Getenv("DEFLATER_DATA_DIR")
+	if d == "" {
+		d = filepath.Join(os.Getenv("LOCALAPPDATA"), "Deflater")
+	}
 	_ = os.MkdirAll(d, 0o755)
 	return d
 }

@@ -74,10 +74,15 @@ func xmlEscape(s string) string {
 	return r.Replace(s)
 }
 
+// buildTaskXML fills the task template for the given user and target.
+func buildTaskXML(user, exePath string) string {
+	xml := strings.ReplaceAll(taskXML, "{USER}", xmlEscape(user))
+	return strings.ReplaceAll(xml, "{EXE}", xmlEscape(exePath))
+}
+
 // Install registers (or replaces) the task pointing at exePath.
 func Install(exePath string) error {
-	xml := strings.ReplaceAll(taskXML, "{USER}", xmlEscape(currentUser()))
-	xml = strings.ReplaceAll(xml, "{EXE}", xmlEscape(exePath))
+	xml := buildTaskXML(currentUser(), exePath)
 
 	// Task Scheduler expects task XML files in UTF-16 LE.
 	tmp := filepath.Join(os.TempDir(), "deflater-task.xml")

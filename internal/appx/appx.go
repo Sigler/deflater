@@ -49,17 +49,9 @@ func (s *Service) refreshLocked() error {
 	if err != nil {
 		return err
 	}
-	var names []string
-	if strings.HasPrefix(out, "[") {
-		if err := json.Unmarshal([]byte(out), &names); err != nil {
-			return fmt.Errorf("parse package list: %w", err)
-		}
-	} else if out != "" {
-		// A single result serializes as a bare JSON string.
-		var one string
-		if err := json.Unmarshal([]byte(out), &one); err == nil {
-			names = []string{one}
-		}
+	names, err := parseNames(out)
+	if err != nil {
+		return err
 	}
 	set := make(map[string]bool, len(names))
 	for _, n := range names {
@@ -67,6 +59,39 @@ func (s *Service) refreshLocked() error {
 	}
 	s.installed = set
 	return nil
+}
+
+// parseNames parses ConvertTo-Json output for the package name list: a
+// JSON array normally, a bare JSON string when exactly one package
+// matched, and empty output when none did.
+func parseNames(out string) ([]string, error) {
+	if out == "" {
+		return nil, nil
+	}
+	if strings.HasPrefix(out, "[") {
+		var names []string
+		if err := json.Unmarshal([]byte(out), &names); err != nil {
+			return nil, fmt.Errorf("parse package list: %w", err)
+		}
+		return names, nil
+	}
+	var one string
+	if err := json.Unmarshal([]byte(out), &one); err != nil {
+		return nil, fmt.Errorf("parse package list: %w", err)
+	}
+	return []string{one}, nil
+}
+
+// Prime seeds the installed-package cache without querying the system.
+// Tests use it to control what "installed" means.
+func (s *Service) Prime(names []string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	set := make(map[string]bool, len(names))
+	for _, n := range names {
+		set[n] = true
+	}
+	s.installed = set
 }
 
 // Remove uninstalls the package and, when elevated, removes it for all
