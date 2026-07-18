@@ -25,6 +25,12 @@ export const en = {
     retry: "Try again",
   },
 
+  search: {
+    placeholder: "Search settings",
+    clear: "Clear search",
+    noResults: (q: string) => `Nothing matches "${q}".`,
+  },
+
   profiles: {
     label: "Preset",
     custom: "Custom selection",

@@ -15,7 +15,7 @@
   import ScanBar from "./lib/components/ScanBar.svelte";
   import ToastHost from "./lib/components/ToastHost.svelte";
   import { clearToasts, pushToast } from "./lib/toasts.svelte";
-  import type { FixResult, Refresh, Report, UpdateInfo } from "./lib/types";
+  import type { FixResult, FixState, Refresh, Report, UpdateInfo } from "./lib/types";
 
   let report = $state<Report | null>(null);
   let loadError = $state("");
@@ -26,6 +26,9 @@
   let maintenancePendingElevation = $state(false);
   let watcherPendingElevation = $state(false);
   let update = $state<UpdateInfo | null>(null);
+  let query = $state("");
+
+  const filtering = $derived(query.trim().length > 0);
 
   const changes = $derived(
     report ? computeChanges(report.fixes, selection) : { enable: [], disable: [] },
@@ -85,9 +88,19 @@
     if (report) updateActive();
   });
 
-  function byCategory(cat: string) {
-    return report?.fixes.filter((f) => f.category === cat) ?? [];
+  function matchesQuery(f: FixState): boolean {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    const s = S.fixes[f.id as keyof typeof S.fixes];
+    const hay = [s?.title, s?.summary, s?.what, f.id].filter(Boolean).join(" ").toLowerCase();
+    return hay.includes(q);
   }
+
+  function byCategory(cat: string) {
+    return report?.fixes.filter((f) => f.category === cat && matchesQuery(f)) ?? [];
+  }
+
+  const resultCount = $derived(report?.fixes.filter(matchesQuery).length ?? 0);
 
   async function load() {
     loadError = "";
@@ -323,10 +336,35 @@
         <ConflictBanner tasks={report.conflictingTasks} onremove={removeConflictingTask} />
 
         <div class="stickytop">
-          <ScanBar inPlace={inPlaceCount} total={report.fixes.length} />
-          <div class="tabsrow">
-            <CategoryNav items={navItems} active={activeSection} variant="tabs" onjump={jump} />
+          <div class="stickyrow">
+            <div class="brand">
+              <img src={mascot} alt="" draggable="false" />
+              <span>{S.app.name}</span>
+            </div>
+            <div class="search">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
+                <path d="M16.5 16.5 L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+              <input
+                type="search"
+                placeholder={S.search.placeholder}
+                aria-label={S.search.placeholder}
+                bind:value={query}
+              />
+              {#if filtering}
+                <button type="button" class="clear" aria-label={S.search.clear} onclick={() => (query = "")}>
+                  ×
+                </button>
+              {/if}
+            </div>
           </div>
+          <ScanBar inPlace={inPlaceCount} total={report.fixes.length} />
+          {#if !filtering}
+            <div class="tabsrow">
+              <CategoryNav items={navItems} active={activeSection} variant="tabs" onjump={jump} />
+            </div>
+          {/if}
         </div>
 
         {#each report.categories as cat (cat)}
@@ -340,6 +378,11 @@
           />
         {/each}
 
+        {#if filtering && resultCount === 0}
+          <p class="noresults">{S.search.noResults(query.trim())}</p>
+        {/if}
+
+        {#if !filtering}
         <div class="anchor" id="sec-maintenance">
           <div class="secheader">
             <h2>{S.nav.maintenance}</h2>
@@ -357,6 +400,7 @@
             onwatcher={setWatcher}
           />
         </div>
+        {/if}
 
         <footer>
           <button type="button" class="link" onclick={() => api.openLogFolder()}>
@@ -448,6 +492,75 @@
     background: color-mix(in srgb, var(--bg-window) 90%, transparent);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--stroke);
+  }
+  .stickyrow {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 8px 2px 2px;
+  }
+  /* Minimal branding that rides along in the sticky bar once the full
+     masthead scrolls away. */
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+  }
+  .brand img {
+    width: 26px;
+    height: 26px;
+    user-select: none;
+  }
+  .brand span {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .search {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: var(--r-control);
+    background: var(--bg-card);
+    border: 1px solid var(--stroke-strong);
+    color: var(--text-faint);
+  }
+  .search:focus-within {
+    border-color: var(--coral);
+  }
+  .search svg {
+    flex: none;
+  }
+  .search input {
+    flex: 1;
+    min-width: 0;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+  }
+  .search input::placeholder {
+    color: var(--text-faint);
+  }
+  .clear {
+    flex: none;
+    font-size: 15px;
+    line-height: 1;
+    color: var(--text-faint);
+    padding: 0 2px;
+  }
+  .clear:hover {
+    color: var(--text);
+  }
+  .noresults {
+    padding: 8px 2px;
+    color: var(--text-dim);
+    font-size: 13px;
   }
   .anchor {
     scroll-margin-top: 96px;
