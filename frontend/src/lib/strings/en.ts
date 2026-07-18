@@ -156,7 +156,7 @@ export const en = {
   },
 
   maintenance: {
-    sectionBlurb: "Keep your choices applied, and get warned when apps sneak in.",
+    sectionBlurb: "Keep your choices applied after Windows updates.",
     mismatch:
       "Automatic maintenance is set to on, but its scheduled task isn't registered. Apply any change and allow the User Account Control (UAC) prompt to set it up.",
     title: "Keep it fixed automatically",
@@ -198,7 +198,7 @@ export const en = {
   footer: {
     logs: "Open logs",
     assurance: "Never touches Defender, Secure Boot, TPM, or anything Xbox or Game Pass.",
-    version: (v: string) => `Deflater ${v} · anti-bloat enforcement, est. 2026`,
+    version: (v: string) => `Deflater ${v}`,
     // {v} is the newer version available on GitHub.
     updateAvailable: (v: string) => `Version ${v} is available`,
   },

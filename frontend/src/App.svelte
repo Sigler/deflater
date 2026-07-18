@@ -4,7 +4,6 @@
   import { api } from "./lib/api";
   import { computeChanges, initialSelection } from "./lib/changes";
   import { S } from "./lib/i18n";
-  import AlertsBanner from "./lib/components/AlertsBanner.svelte";
   import ApplyBar from "./lib/components/ApplyBar.svelte";
   import CategoryNav from "./lib/components/CategoryNav.svelte";
   import ConflictBanner from "./lib/components/ConflictBanner.svelte";
@@ -32,7 +31,6 @@
   let progressText = $state("");
   let showElevateModal = $state(false);
   let maintenancePendingElevation = $state(false);
-  let watcherPendingElevation = $state(false);
   let update = $state<UpdateInfo | null>(null);
   let recallInfo = $state<RecallInfo | null>(null);
   let query = $state("");
@@ -209,7 +207,6 @@
       for (const f of failed) if (enable.includes(f.id)) next.add(f.id);
       selection = new SvelteSet(next);
       maintenancePendingElevation = false;
-      watcherPendingElevation = false;
       announceApply(outcome.saveWarning ?? "", failed, r.maintenance, outcome.refresh ?? "signout");
     } catch (e) {
       pushToast({ kind: "warn", message: S.apply.applyError, detail: [`${e}`], sticky: true });
@@ -309,24 +306,6 @@
     }
   }
 
-  async function setWatcher(on: boolean) {
-    if (!report) return;
-    report.watcher = on;
-    try {
-      const res = await api.setWatcher(on);
-      watcherPendingElevation = res.needsElevation;
-    } catch (e) {
-      report.watcher = !on;
-      watcherPendingElevation = false;
-      pushToast({ kind: "warn", message: `${e}`, sticky: true });
-    }
-  }
-
-  async function removeAlertPackage(pkg: string) {
-    await api.removePackage(pkg);
-    if (report) report.alerts = report.alerts.filter((a) => a.package !== pkg);
-  }
-
   async function removeConflictingTask(name: string) {
     if (!report) return;
     // Deleting a task that runs as admin needs elevation. If we already
@@ -339,11 +318,6 @@
     } else {
       await api.stageTaskRemovalAndElevate(name);
     }
-  }
-
-  async function dismissAlerts() {
-    await api.dismissAlerts();
-    if (report) report.alerts = [];
   }
 
   void load();
@@ -372,11 +346,6 @@
       </aside>
       <main>
         <Header />
-        <AlertsBanner
-          alerts={report.alerts}
-          onremove={removeAlertPackage}
-          ondismiss={dismissAlerts}
-        />
         <ConflictBanner tasks={report.conflictingTasks} onremove={removeConflictingTask} />
         {#if recallInfo}
           <RecallBanner info={recallInfo} onopen={() => api.openRecallFolder()} />
@@ -440,11 +409,8 @@
           {/if}
           <MaintenanceCard
             maintenance={report.maintenance}
-            watcher={report.watcher}
             maintenancePending={maintenancePendingElevation}
-            watcherPending={watcherPendingElevation}
             onmaintenance={setMaintenance}
-            onwatcher={setWatcher}
           />
         </div>
         {/if}
@@ -454,7 +420,7 @@
             {S.footer.logs}
           </button>
           <span>{S.footer.assurance}</span>
-          <span class="stamp meta">
+          <span class="stamp meta nowrap">
             {report.edition}
             {#if update}
               · <button type="button" class="update" onclick={() => update && api.openUrl(update.url)}>
@@ -703,6 +669,10 @@
     text-transform: uppercase;
     letter-spacing: 0.07em;
     font-size: 10.5px;
+  }
+  .nowrap {
+    white-space: nowrap;
+    flex: none;
   }
   .update {
     font-size: 11px;
