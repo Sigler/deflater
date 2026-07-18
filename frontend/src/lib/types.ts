@@ -64,6 +64,8 @@ export interface RecallInfo {
 export interface Report {
   version: string;
   elevated: boolean;
+  edition: string;
+  home: boolean;
   categories: string[];
   fixes: FixState[];
   managed: string[];

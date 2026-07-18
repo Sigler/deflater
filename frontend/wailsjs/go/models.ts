@@ -166,6 +166,8 @@ export namespace main {
 	export class Report {
 	    version: string;
 	    elevated: boolean;
+	    edition: string;
+	    home: boolean;
 	    categories: string[];
 	    fixes: FixState[];
 	    managed: string[];
@@ -184,6 +186,8 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.version = source["version"];
 	        this.elevated = source["elevated"];
+	        this.edition = source["edition"];
+	        this.home = source["home"];
 	        this.categories = source["categories"];
 	        this.fixes = this.convertValues(source["fixes"], FixState);
 	        this.managed = source["managed"];

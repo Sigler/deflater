@@ -145,6 +145,14 @@ Next to resolve, in order of rigor:
 
 ## Windows edition awareness
 
+- DONE (detection + display): `internal/winver` reads the edition; the
+  report carries `edition`/`home` and the footer shows e.g. "Windows 11
+  Home". STILL TO DO: the per-fix tailoring below (hiding/marking genuine
+  Home no-ops) needs a careful per-fix audit before shipping, so it's not
+  wired yet — mislabeling a working fix as a no-op would be worse than
+  saying nothing. `silent-app-installs` is the tricky case: its
+  CloudContent policies are Enterprise/Edu-only, but it still works on
+  Home via the HKCU ContentDeliveryManager values, so it is NOT a no-op.
 - For the device-metadata / LG fix, no edition detection is needed: set
   both the policy value and the CurrentVersion value always (covers Home
   and Pro; policy overrides the dialog where honored). gpedit == the

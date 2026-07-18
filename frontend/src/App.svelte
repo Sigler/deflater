@@ -427,13 +427,16 @@
             {S.footer.logs}
           </button>
           <span>{S.footer.assurance}</span>
-          {#if update}
-            <button type="button" class="update" onclick={() => update && api.openUrl(update.url)}>
-              {S.footer.updateAvailable(update.latest)}
-            </button>
-          {:else}
-            <span class="stamp">{S.footer.version(report.version)}</span>
-          {/if}
+          <span class="stamp meta">
+            {report.edition}
+            {#if update}
+              · <button type="button" class="update" onclick={() => update && api.openUrl(update.url)}>
+                {S.footer.updateAvailable(update.latest)}
+              </button>
+            {:else}
+              · {S.footer.version(report.version)}
+            {/if}
+          </span>
         </footer>
       </main>
     </div>

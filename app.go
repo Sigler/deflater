@@ -27,6 +27,7 @@ import (
 	"deflater/internal/schtask"
 	"deflater/internal/toast"
 	"deflater/internal/update"
+	"deflater/internal/winver"
 )
 
 // App is the bridge the frontend calls. Every exported method becomes a
@@ -84,6 +85,8 @@ type FixState struct {
 type Report struct {
 	Version     string         `json:"version"`
 	Elevated    bool           `json:"elevated"`
+	Edition     string         `json:"edition"`
+	Home        bool           `json:"home"`
 	Categories  []string       `json:"categories"`
 	Fixes       []FixState     `json:"fixes"`
 	Managed     []string       `json:"managed"`
@@ -107,9 +110,12 @@ type Report struct {
 func (a *App) GetReport() (Report, error) {
 	_ = a.eng.Appx.Refresh()
 	cfg := config.Load()
+	ed := winver.Detect()
 	r := Report{
 		Version:     appVersion,
 		Elevated:    elevate.IsElevated(),
+		Edition:     ed.Edition,
+		Home:        ed.Home,
 		Categories:  catalog.Categories,
 		Managed:     cfg.Managed,
 		Maintenance: cfg.Maintenance,
